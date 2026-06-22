@@ -12,19 +12,35 @@ phone number's "A MESSAGE COMES IN" webhook to:
 """
 
 from fastapi import FastAPI, Form, Request, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import re
 import hashlib
 import hmac
 import base64
-from urllib.parse import urlencode
+import os
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_AUTH_TOKEN
 from src.meetings.google_meet import book_meeting_for_buyer
 from src.outreach.buyer_outreach import handle_opt_out
+from src.webhook.opt_in import router as opt_in_router
 
-app      = FastAPI(title="Tranchi AI SMS Webhook")
+app      = FastAPI(title="Tranchi AI")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Mount the opt-in API
+app.include_router(opt_in_router)
+
+# Serve the funnel HTML files
+FUNNEL_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "funnel")
+
+@app.get("/")
+async def landing():
+    return FileResponse(os.path.join(FUNNEL_DIR, "index.html"))
+
+@app.get("/thank-you.html")
+async def thank_you():
+    return FileResponse(os.path.join(FUNNEL_DIR, "thank-you.html"))
 
 YES_PATTERNS  = re.compile(r"\b(yes|yeah|yep|interested|in|send|tell me more|details|absolutely|sure|let'?s go)\b", re.I)
 NO_PATTERNS   = re.compile(r"\b(no|nope|pass|not interested|remove|don'?t|stop texting)\b", re.I)

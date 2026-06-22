@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You're In — Tranchi AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --gold: #D4A847; --dark: #0A0A0B; --card: #141416; --border: #242428; --text: #F0F0F0; --muted: #888; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 56px 48px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .check {
+      width: 64px;
+      height: 64px;
+      background: rgba(212,168,71,0.15);
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      font-size: 28px;
+    }
+    h1 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+    h1 span { color: var(--gold); }
+    p { color: var(--muted); font-size: 16px; line-height: 1.6; margin-bottom: 16px; }
+    .sms-note {
+      background: rgba(212,168,71,0.08);
+      border: 1px solid rgba(212,168,71,0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 14px;
+      color: #ccc;
+      margin: 24px 0;
+      line-height: 1.6;
+    }
+    .sms-note strong { color: var(--gold); }
+    .footer-note { font-size: 12px; color: #444; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="check">✓</div>
+    <h1>You're <span>In.</span></h1>
+    <p>Check your phone — a confirmation text is on its way.</p>
+
+    <div class="sms-note">
+      <strong>What happens next:</strong><br />
+      When we find a deal that matches your buy box, you'll get a text with the address,
+      ARV, asking price, and deal grade. Reply <strong>YES</strong> and we'll send full
+      details + book a call if needed.
+    </div>
+
+    <p style="font-size:14px;">
+      First deal alerts usually go out within 24 hours.<br />
+      We only text when there's a real deal — no filler.
+    </p>
+
+    <p class="footer-note">
+      Reply STOP to any text to opt out instantly.<br />
+      Questions? Text us at the number you receive from.
+    </p>
+  </div>
+</body>
+</html>
