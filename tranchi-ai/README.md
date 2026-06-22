@@ -1,168 +1,193 @@
 # Tranchi AI — Government Auction Deal Engine
 
-Finds government-auctioned properties (tax sales, HUD, sheriff sales, Fannie Mae, Freddie Mac, USDA), AI-underwrites them in seconds, and pings your cash buyers list for fast exits.
+Autonomous pipeline targeting $18K+/week from government-auctioned properties.
+Finds deals, underwrites with Claude AI, locates cash buyers, runs outreach sequences,
+and auto-books Google Meet when a buyer says YES.
 
-**Target:** 2 closed deals/day → $18,000/week
-
----
-
-## How It Works
-
-```
-Government Auctions
-    ↓
-Scraper (Apify + direct APIs)
-    ↓
-Supabase (auction_properties)
-    ↓
-Claude 3.5 Sonnet (MAO, ARV, grade)
-    ↓
-Filter: net profit > $10K
-    ↓
-Twilio SMS → Opted-in Cash Buyers
-    ↓
-Deal Closed → closed_deals table
-```
+**You close. The machine handles everything else.**
 
 ---
 
-## Setup (15 minutes)
+## Full Pipeline
 
-### Step 1 — Clone & Install
+```
+07:00  python main.py scrape       →  scrape HUD, Fannie Mae, tax sales, auction.com
+07:10  python main.py underwrite   →  Claude 3.5 Sonnet scores every property (MAO, ARV, grade)
+07:30  python main.py buyers       →  find new cash buyers (Google Maps, Craigslist, Connected Investors)
+08:00  python main.py outreach     →  SMS approved deals to opted-in buyers (max 3 per deal)
+        [background process]
+        python main.py webhook     →  listen for buyer replies
+        Buyer replies YES          →  Google Meet auto-booked, link sent by SMS
+        Buyer replies NO           →  marked cold, next buyer contacted
+        Buyer replies STOP         →  permanent opt-out
+        Day 1 follow-up            →  auto-sent if no reply
+        Day 3 final notice         →  auto-sent if still no reply
+        You win auction            →  python main.py → close_deal()
+09:00  python main.py report       →  daily P&L vs $18K/week target
+```
+
+---
+
+## Setup (30 minutes)
+
+### 1. Install dependencies
 
 ```bash
 cd tranchi-ai
 pip install -r requirements.txt
 cp .env.example .env
+# Edit .env with your keys
 ```
 
-### Step 2 — API Keys to Gather
+### 2. API Keys to Gather
 
-| Key | Where to Get It | Cost |
-|-----|----------------|------|
-| `SUPABASE_URL` + `SUPABASE_KEY` | supabase.com → Project Settings → API | Free tier works |
-| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | ~$0.003 per underwrite |
-| `TWILIO_ACCOUNT_SID/TOKEN` | twilio.com → Console | ~$0.0075/SMS |
-| `TWILIO_FROM_NUMBER` | Buy a number in Twilio ($1/month) | $1/mo |
-| `APIFY_API_TOKEN` | apify.com → Settings → Integrations | $49/mo plan covers this |
-| `BATCHDATA_API_KEY` | batchdata.com → API Keys | Pay per call |
+| Key | Get It Here | Est. Cost |
+|-----|------------|-----------|
+| `SUPABASE_URL` + `SUPABASE_KEY` | supabase.com → Project Settings → API | Free |
+| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys | ~$0.003/underwrite |
+| `TWILIO_ACCOUNT_SID/TOKEN` | twilio.com → Console | $0.0075/SMS |
+| `TWILIO_FROM_NUMBER` | Twilio → Buy Number | $1/mo |
+| `APIFY_API_TOKEN` | apify.com → Settings → Integrations | $49/mo |
+| `BATCHDATA_API_KEY` | batchdata.com | Pay per call |
+| Google Service Account | See step 4 below | Free |
 
-### Step 3 — Set Up Supabase
+### 3. Supabase Setup
 
-1. Go to supabase.com → New Project
-2. Open SQL Editor
-3. Paste and run: `database/supabase_schema.sql`
-4. All tables, indexes, and views are created automatically
+Paste and run `database/supabase_schema.sql` in Supabase SQL Editor.
 
-### Step 4 — Add Your First Cash Buyers
+### 4. Google Calendar / Meet Setup
 
-In Supabase SQL Editor:
+1. Go to [console.cloud.google.com](https://console.cloud.google.com)
+2. Create a project → Enable **Google Calendar API**
+3. IAM & Admin → Service Accounts → Create Service Account
+4. Download the JSON key → save as `tranchi-ai/google_credentials.json`
+5. Open Google Calendar → Settings → Share your calendar → add the service account email with "Make changes to events" permission
+
+### 5. Twilio Webhook Setup
+
+1. Buy a phone number in Twilio
+2. Go to: Active Numbers → your number → Messaging → "A MESSAGE COMES IN"
+3. Set Webhook URL to: `https://your-server.com/sms/inbound`
+4. Deploy the webhook server (see Deploy section below)
+
+### 6. Add Your First Buyers Manually (optional seed)
 
 ```sql
 INSERT INTO cash_buyers (name, company, phone, email, state,
     preferred_states, max_purchase_price, opt_in, opt_in_date, status)
 VALUES
   ('Marcus Johnson', 'MJ Capital', '+15551234567', 'marcus@mjcap.com',
-   'TX', ARRAY['TX','FL'], 150000, TRUE, NOW(), 'ACTIVE'),
-  ('Sandra Lee', 'Quick Flip LLC', '+15559876543', 'sandra@quickflip.com',
-   'GA', ARRAY['GA','NC','TN'], 100000, TRUE, NOW(), 'ACTIVE');
+   'TX', ARRAY['TX','FL'], 150000, TRUE, NOW(), 'ACTIVE');
 ```
 
-**Only buyers with `opt_in = TRUE` ever receive SMS.**
+Only buyers with `opt_in = TRUE` ever receive SMS.
 
-### Step 5 — Run the Full Pipeline
+---
 
-```bash
-# Full daily run (scrape → underwrite → outreach → report)
-python main.py
-
-# Or run individual stages:
-python main.py scrape       # Step 1: pull from gov auctions
-python main.py underwrite   # Step 2: Claude underwriting
-python main.py outreach     # Step 3: SMS to buyers
-python main.py report       # Step 4: daily summary
-```
-
-### Step 6 — Automate (run at 7am daily)
+## Daily Cron (automated)
 
 ```bash
-# Add to crontab
-crontab -e
-
-# Add this line:
-0 7 * * * cd /path/to/tranchi-ai && python main.py >> logs/daily.log 2>&1
+# Run full pipeline at 7am and sequences again at noon
+0 7  * * 1-5  cd /path/to/tranchi-ai && python main.py >> logs/morning.log 2>&1
+0 12 * * 1-5  cd /path/to/tranchi-ai && python main.py sequences >> logs/noon.log 2>&1
 ```
 
 ---
 
-## The MAO Math (70% Rule)
+## Deploy Webhook Server
+
+The webhook server must be public so Twilio can reach it.
+Easiest free options:
+
+```bash
+# Railway (recommended — free tier)
+# 1. Push this repo to GitHub
+# 2. New project → Deploy from GitHub → set start command:
+#    python main.py webhook
+
+# Or run locally with ngrok for testing:
+ngrok http 8000
+# Then set Twilio webhook to: https://xxxx.ngrok.io/sms/inbound
+python main.py webhook
+```
+
+---
+
+## The Math
 
 ```
-MAO = (ARV × 0.70) - Repair Costs
+MAO = (ARV × 0.70) - Repairs
 
 Example:
-  ARV:      $90,000
-  Repairs:  $18,000
-  MAO:      ($90,000 × 0.70) - $18,000 = $45,000
+  Gov auction opens at:   $9,000
+  You bid and win at:     $22,000
+  ARV (market value):     $90,000
+  Repairs estimate:       $18,000
+  MAO (your ceiling):     $45,000
 
-  Gov auction opening bid: $9,000
-  You bid up to: $34,000 (leaving margin buffer)
-  Assignment fee to buyer: $12,000
-  Net profit: ~$10,500 after costs
+  You assign to cash buyer at: $34,000
+  Assignment fee:              $12,000
+  Your costs (title/misc):     ~$1,500
+  NET PROFIT:                  ~$10,500
+
+2 deals/day × $10,500 = $21,000/week
 ```
 
 ---
 
-## Where to Find Auctions (Free)
+## Buyer Sources (automatic)
 
-| Source | URL | Best States |
-|--------|-----|------------|
-| HUD Homes | hudhomestore.gov | All 50 |
-| Fannie Mae | homepath.com | All 50 |
-| Freddie Mac | homesteps.com | All 50 |
-| GovEase Tax Sales | govease.com | TX, FL, GA, OH |
-| Auction.com | auction.com | All 50 |
-| USDA Rural Dev | properties.sc.egov.usda.gov | Rural markets |
-| Texas Tax Sales | tax-sale.info | TX |
-| Maricopa County | maricopa.gov/tax-lien | AZ |
+| Source | Method | Volume |
+|--------|--------|--------|
+| Google Maps — "we buy houses" | Apify scraper | ~50/city |
+| Craigslist Real Estate Wanted | Direct scrape | ~20/market |
+| Connected Investors directory | Apify scraper | ~100/state |
+| Inbound replies (they contact you) | Twilio webhook | varies |
 
 ---
 
-## Deal Pipeline Stages
+## Property Sources (automatic)
 
-```
-NEW → UNDERWRITING → APPROVED → BIDDING → WON → ASSIGNED → CLOSED
-                                                  └→ LOST
-```
+| Source | URL | Notes |
+|--------|-----|-------|
+| HUD Homes | hudhomestore.gov | FHA foreclosures |
+| Fannie Mae | homepath.com | FNMA REO |
+| Freddie Mac | homesteps.com | FHLMC REO |
+| GovEase Tax Sales | govease.com | County tax auctions |
+| Auction.com | auction.com | Bank + gov REO |
+| USDA Rural Dev | properties.sc.egov.usda.gov | Rural deep discounts |
 
 ---
 
 ## Closing a Deal
 
-When you've won an auction and assigned to a buyer:
+When you win an auction and assign it:
 
 ```python
 from src.pipeline.deal_manager import close_deal
 
 close_deal(
-    deal_id="uuid-of-deal",
-    sale_price=45000,
-    assignment_fee=12000
+    deal_id="uuid-from-active-deals-table",
+    sale_price=34000,
+    assignment_fee=12000,
 )
+# Automatically archives to closed_deals and updates KPIs
 ```
 
 ---
 
-## KPIs to Hit $18K/Week
+## You Handle
 
-| Metric | Daily Target |
-|--------|-------------|
-| Properties scraped | 50+ |
-| AI approved (>$10K profit) | 5–10 |
-| Buyer SMS sent | 10–20 |
-| Auctions bid | 3–5 |
-| Auctions won | 2 |
-| Assignments closed | 2 |
-| Assignment fees | $9,000+ |
+- Bidding at the actual auction (online or in person)
+- Signing paperwork / assignment contracts
+- Any call a buyer requests (Google Meet is auto-booked for you)
 
-Two deals/day at $9K avg = $18K/week. The math works — the variable is deal flow and buyer depth.
+## The Machine Handles
+
+- Finding properties 24/7 across 7 states
+- Underwriting every deal in seconds
+- Building and scoring your buyer database
+- Sending deal alerts to the right buyers
+- Following up on days 1 and 3
+- Booking Google Meet when someone says YES
+- Tracking all KPIs toward your $18K+ weekly target
