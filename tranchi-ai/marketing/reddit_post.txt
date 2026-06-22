@@ -1,0 +1,17 @@
+SUBREDDIT: r/realestateinvesting OR r/WholesaleRealEstate
+
+TITLE:
+Built an AI that finds government auction properties and texts them to cash buyers — looking for buyers in TX/FL/OH/GA/NC/TN/AZ
+
+BODY:
+Been building an automated deal pipeline that scrapes tax sales, HUD homes, sheriff sales, and government auction portals every morning across 7 states.
+
+Claude AI underwrites each property — calculates ARV from comps, estimates repairs by year built + condition, grades the deal, and filters anything under $10K net profit before it goes anywhere.
+
+The ones that pass get texted to our buyer list with: address, ARV, asking price, deal grade, and auction date.
+
+Buy box: SFR/MF, $9K–$150K, AS-IS cash, 14-day close.
+
+If you're actively buying in those states and want deals texted to you: [YOUR RAILWAY URL]
+
+Happy to talk shop about the tech stack or deal sourcing in the comments.

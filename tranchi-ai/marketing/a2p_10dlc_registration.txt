@@ -1,0 +1,45 @@
+TWILIO A2P 10DLC REGISTRATION — Pre-filled Answers
+URL: https://console.twilio.com/us1/develop/sms/regulatory-compliance
+
+====================================
+STEP 1: BRAND REGISTRATION
+====================================
+Legal Business Name:    [YOUR LLC NAME]
+Business Type:          Limited Liability Company (LLC)
+EIN / Tax ID:           [YOUR EIN — get free at irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online]
+Industry:               Real Estate
+Website:                [YOUR RAILWAY URL]
+Business Address:       [YOUR ADDRESS]
+Business City/State:    [YOUR CITY, STATE]
+
+====================================
+STEP 2: CAMPAIGN REGISTRATION
+====================================
+Use Case:               Marketing
+Campaign Name:          Tranchi AI Deal Alerts
+
+Campaign Description (copy-paste this exactly):
+"We send real estate deal alerts via SMS to opted-in cash buyers and real estate
+investors. Recipients subscribe voluntarily through our website opt-in form at
+[YOUR RAILWAY URL], which includes explicit TCPA consent language. Messages contain
+property details (address, ARV, asking price) for off-market properties sourced from
+government auctions. Recipients can reply STOP at any time to opt out."
+
+Sample Message 1 (copy-paste):
+"[A+ DEAL] 3/2 SFR Memphis, TN. ARV $90K. Asking $34K AS-IS. Cash only, 14-day close. Reply YES for details or STOP to opt out. -TranchiAI"
+
+Sample Message 2 (copy-paste):
+"Hey Marcus! Welcome to the Tranchi AI deal list. You'll get texts when we have a property matching your buy box. Reply YES to any deal for details. Reply STOP to opt out anytime. -TranchiAI"
+
+Opt-in Method:          Website form
+Opt-in Description:     "Subscribers submit a web form at [YOUR URL] that includes
+                         explicit consent language: 'By submitting this form, you
+                         expressly consent to receive recurring automated text messages
+                         from Tranchi AI at the mobile number provided.'"
+
+====================================
+STEP 3: AFTER APPROVAL (1-3 business days)
+====================================
+Run: python scripts/setup_twilio.py https://your-app.up.railway.app
+
+That script automatically points your Twilio number's webhook at your server.
