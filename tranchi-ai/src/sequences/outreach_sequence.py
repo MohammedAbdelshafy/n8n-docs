@@ -17,7 +17,7 @@ from twilio.rest import Client as TwilioClient
 from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) if TWILIO_ACCOUNT_SID else None
 
 QUIET_HOUR_START = 9
 QUIET_HOUR_END   = 20
@@ -50,6 +50,9 @@ def build_day3_final(buyer_name: str, address: str, city: str, arv: float, mao: 
 # SEND ONE FOLLOW-UP
 # ============================================================
 def send_followup(to: str, message: str, buyer_id: str, property_id: str, sequence_day: int) -> bool:
+    if not twilio:
+        return False
+
     hour = datetime.now().hour
     if not (QUIET_HOUR_START <= hour < QUIET_HOUR_END):
         return False

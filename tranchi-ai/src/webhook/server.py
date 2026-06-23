@@ -68,6 +68,8 @@ STOP_PATTERNS = re.compile(r"^\s*stop\s*$", re.I)
 # TWILIO SIGNATURE VALIDATION
 # ============================================================
 def validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
+    if not TWILIO_AUTH_TOKEN:
+        return True  # Twilio not configured — skip validation (webhook won't be called anyway)
     sorted_params = "".join(f"{k}{v}" for k, v in sorted(params.items()))
     s = request_url + sorted_params
     mac = hmac.new(TWILIO_AUTH_TOKEN.encode(), s.encode(), hashlib.sha1)

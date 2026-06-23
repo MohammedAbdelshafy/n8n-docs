@@ -13,7 +13,7 @@ from config import (
 )
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) if TWILIO_ACCOUNT_SID else None
 
 # Quiet hours: no texts before 9am or after 8pm local time
 QUIET_HOUR_START = 9
@@ -64,6 +64,9 @@ def find_matching_buyers(prop: dict) -> list[dict]:
 # SEND SMS VIA TWILIO
 # ============================================================
 def send_sms(to_number: str, message: str, buyer_id: str, property_id: str) -> dict:
+    if not twilio:
+        return {"status": "SKIPPED", "reason": "Twilio not configured — email-only mode"}
+
     current_hour = datetime.now().hour
     if not (QUIET_HOUR_START <= current_hour < QUIET_HOUR_END):
         return {

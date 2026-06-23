@@ -1,4 +1,3 @@
-anthropic>=0.40.0
 supabase>=2.9.0
 httpx>=0.27.0
 twilio>=9.3.0
@@ -10,6 +9,5 @@ google-api-python-client>=2.150.0
 pytz>=2024.1
 python-multipart>=0.0.12
 
-# Free scraping stack (replaces $49/mo Apify)
+# Free scraping stack
 playwright>=1.49.0
-crawl4ai>=0.4.0
