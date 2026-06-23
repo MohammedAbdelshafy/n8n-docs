@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS auction_properties (
     county TEXT,
 
     -- Auction source
-    source TEXT NOT NULL, -- 'HUD' | 'TAX_SALE' | 'SHERIFF' | 'FANNIE_MAE' | 'FREDDIE_MAC' | 'USDA'
+    source TEXT NOT NULL, -- e.g. TAX_DEED_TX_HARRIS, FORECLOSURE_FL_HILLSBOROUGH, BID4ASSETS
     source_url TEXT,
-    auction_date DATE,
     listing_id TEXT,
+    auction_date TEXT,  -- kept as text; LLM may return natural language dates
 
     -- Financials
     opening_bid NUMERIC(12,2),      -- what the gov starts bidding at
@@ -49,7 +49,6 @@ CREATE TABLE IF NOT EXISTS auction_properties (
     status TEXT DEFAULT 'NEW',        -- NEW | UNDERWRITING | APPROVED | BIDDING | WON | LOST | ASSIGNED | CLOSED
     assigned_buyer_id UUID,
 
-    CONSTRAINT valid_source CHECK (source IN ('HUD','TAX_SALE','SHERIFF','FANNIE_MAE','FREDDIE_MAC','USDA','AUCTION_COM','OTHER')),
     CONSTRAINT valid_ai_status CHECK (ai_status IN ('PENDING','APPROVE','REJECT','REVIEW')),
     CONSTRAINT valid_status CHECK (status IN ('NEW','UNDERWRITING','APPROVED','BIDDING','WON','LOST','ASSIGNED','CLOSED'))
 );
