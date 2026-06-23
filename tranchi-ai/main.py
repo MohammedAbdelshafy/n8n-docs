@@ -1,29 +1,33 @@
 """
 TRANCHI AI — Full Pipeline Orchestrator
 
-  1. scrape       — pull government auction properties (free Playwright)
-  2. underwrite   — Claude AI scores every new property
-  3. buyers       — find cash buyers: Google Maps (free)
-  4. prospects    — find FSBO + Craigslist + Reddit leads (free)
-  5. outreach     — email approved deals to opted-in buyers
-  6. sequences    — fire Day 1 / Day 3 follow-ups
-  7. report       — daily KPI dashboard
-  8. leads        — show sellable opt-in lead inventory + post templates
-  9. export       — export opt-in seller leads to CSV
-  10. webhook     — start the inbound SMS/form server
+  1. scrape          — pull government auction properties (free Playwright)
+  2. underwrite      — Claude AI scores every new property
+  3. buyers          — find cash buyers: Google Maps (free)
+  4. prospects       — find FSBO + Craigslist + Reddit leads (free)
+  5. outreach        — email approved deals to opted-in buyers
+  6. sequences       — fire Day 1 / Day 3 follow-ups
+  7. report          — daily KPI dashboard
+  8. leads           — show sellable opt-in lead inventory + post templates
+  9. export          — export opt-in seller leads to CSV
+  10. import-zillow  — import Property Data Labs CSV export
+  11. outreach-fsbo  — AI-draft emails to FSBO prospects
+  12. webhook        — start the inbound SMS/form server
 
 Usage:
-  python main.py              # full daily run (steps 1–7)
-  python main.py scrape       # auction property scraper
-  python main.py underwrite   # AI underwriting
-  python main.py buyers       # find cash buyers (Google Maps)
-  python main.py prospects    # find FSBO + Craigslist + Reddit leads
-  python main.py outreach     # email deals to opted-in buyers
-  python main.py sequences    # Day 1 / Day 3 follow-ups
-  python main.py report       # KPI dashboard
-  python main.py leads        # show sellable leads + post templates
-  python main.py export       # export opt-in leads to CSV
-  python main.py webhook      # start inbound server (Railway uses this)
+  python main.py                            # full daily run
+  python main.py scrape                     # auction property scraper
+  python main.py underwrite                 # AI underwriting
+  python main.py buyers                     # find cash buyers (Google Maps)
+  python main.py prospects                  # FSBO + Craigslist + Reddit
+  python main.py outreach                   # email deals to opted-in buyers
+  python main.py sequences                  # Day 1 / Day 3 follow-ups
+  python main.py report                     # KPI dashboard
+  python main.py leads                      # sellable leads + post templates
+  python main.py export                     # export opt-in leads to CSV
+  python main.py import-zillow file.csv     # import Zillow Data Exporter CSV
+  python main.py outreach-fsbo              # AI emails to FSBO prospects
+  python main.py webhook                    # start inbound server (Railway)
 """
 
 import asyncio
@@ -54,6 +58,20 @@ def main():
         from src.pipeline.lead_export import export_seller_leads, export_summary
         export_summary()
         export_seller_leads()
+        return
+
+    if mode == "import-zillow":
+        csv_path = sys.argv[2] if len(sys.argv) > 2 else None
+        if not csv_path:
+            print("Usage: python main.py import-zillow path/to/export.csv")
+            sys.exit(1)
+        from scripts.import_zillow_export import import_zillow_csv
+        import_zillow_csv(csv_path)
+        return
+
+    if mode == "outreach-fsbo":
+        from src.outreach.fsbo_outreach import run_fsbo_outreach
+        run_fsbo_outreach()
         return
 
     if mode == "prospects":
