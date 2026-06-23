@@ -1,0 +1,81 @@
+═══════════════════════════════════════════════════════
+FACEBOOK LEAD AD — SELLER FUNNEL ($20–40 budget)
+Paste these directly into Ads Manager. One ad set per state.
+═══════════════════════════════════════════════════════
+
+CAMPAIGN OBJECTIVE:  Leads
+DAILY BUDGET:        $10/day (run 3–4 days, then pause)
+PLACEMENT:           Facebook Feed only (cheapest cost-per-lead)
+
+───────────────────────────────────────────────────────
+AUDIENCE (build one ad set per state)
+───────────────────────────────────────────────────────
+Location:    TX  (then duplicate for FL, OH, GA, NC, TN)
+Age:         35 – 65+
+Gender:      All
+Detailed Targeting:
+  • Behaviors → "Homeowners" / "Likely to move"
+  • Interests → "Real estate", "For sale by owner (FSBO)"
+Exclude:     "Renters" if available
+
+Start with ONE state (TX or FL). Scale the winner.
+
+───────────────────────────────────────────────────────
+AD CREATIVE — Variation A (Speed)
+───────────────────────────────────────────────────────
+Primary text:
+Need to sell your house fast? We make cash offers in 24 hours —
+no repairs, no agent fees, no showings. Sell as-is and close on
+YOUR timeline. Get your no-obligation offer today.
+
+Headline:        Get a Cash Offer in 24 Hours
+Description:      No fees · No repairs · No obligation
+Call to action:  Get Quote
+
+───────────────────────────────────────────────────────
+AD CREATIVE — Variation B (As-Is / pain relief)
+───────────────────────────────────────────────────────
+Primary text:
+House needs work? Inherited a property you don't want? Tired of
+being a landlord? We buy houses in any condition, for cash, with
+zero repairs or cleanup needed. See what yours is worth — free.
+
+Headline:        We Buy Houses As-Is — Any Condition
+Description:      Fair cash offer, no fees, close in days
+Call to action:  Get Quote
+
+───────────────────────────────────────────────────────
+WHERE THE AD POINTS
+───────────────────────────────────────────────────────
+Website URL:   https://YOUR-RAILWAY-URL.up.railway.app/sell
+
+(Replace YOUR-RAILWAY-URL with your live domain. Test it first —
+visit /sell in a browser and confirm the form loads before spending
+a dollar.)
+
+Privacy Policy URL (Facebook requires this on every lead ad):
+   https://YOUR-RAILWAY-URL.up.railway.app/privacy
+
+───────────────────────────────────────────────────────
+IMAGE
+───────────────────────────────────────────────────────
+Use a clean single-family home photo. Free + commercial-use:
+   https://unsplash.com/s/photos/house  (download, no attribution needed)
+Avoid stock photos with visible faces or text overlays — they
+underperform and can trip Facebook's text-on-image filter.
+
+───────────────────────────────────────────────────────
+WHAT TO EXPECT AT $40 TOTAL
+───────────────────────────────────────────────────────
+  Cost per seller lead:  $8 – $15
+  Leads generated:       3 – 5
+  If sold at $75–100 ea: $225 – $500 back
+  Watch in Ads Manager:  if a lead costs >$20, pause and switch
+                         to the other creative variation.
+
+───────────────────────────────────────────────────────
+DO THIS FIRST (free, often faster than ads)
+───────────────────────────────────────────────────────
+Post marketing/facebook_post.txt to 2–3 local "real estate
+investors" Facebook groups. Costs nothing and can land leads
+before your paid ad even gets approved.

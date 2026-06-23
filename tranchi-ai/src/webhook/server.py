@@ -54,6 +54,11 @@ async def seller_landing():
 async def seller_thanks():
     return FileResponse(os.path.join(FUNNEL_DIR, "seller-thanks.html"))
 
+@app.get("/privacy")
+async def privacy():
+    # Required by Facebook Lead Ads + TCPA compliance
+    return FileResponse(os.path.join(FUNNEL_DIR, "privacy.html"))
+
 YES_PATTERNS  = re.compile(r"\b(yes|yeah|yep|interested|in|send|tell me more|details|absolutely|sure|let'?s go)\b", re.I)
 NO_PATTERNS   = re.compile(r"\b(no|nope|pass|not interested|remove|don'?t|stop texting)\b", re.I)
 STOP_PATTERNS = re.compile(r"^\s*stop\s*$", re.I)
