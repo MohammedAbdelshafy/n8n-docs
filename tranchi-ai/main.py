@@ -27,6 +27,7 @@ Usage:
   python main.py export                     # export opt-in leads to CSV
   python main.py import-zillow file.csv     # import Zillow Data Exporter CSV
   python main.py outreach-fsbo              # AI emails to FSBO prospects
+  python main.py buyers-all                 # ALL buyer scrapers in one shot
   python main.py webhook                    # start inbound server (Railway)
 """
 
@@ -97,6 +98,11 @@ def main():
         print("\n[2/7] AI UNDERWRITING...")
         result = run_underwriting()
         print(f"     Approved: {result['approved']} | Rejected: {result['rejected']}")
+
+    if mode == "buyers-all":
+        from src.scrapers.buyer_aggregator import run_buyer_aggregator
+        run_buyer_aggregator()
+        return
 
     if mode in ("all", "buyers"):
         print("\n[3/7] BUYER ACQUISITION (Playwright — free)...")
