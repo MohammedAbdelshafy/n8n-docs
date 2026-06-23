@@ -104,6 +104,26 @@ def main():
         run_buyer_aggregator()
         return
 
+    if mode == "fb-post":
+        from src.outreach.facebook_groups import run_facebook_post_generator
+        post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
+        state     = sys.argv[3] if len(sys.argv) > 3 else "TX"
+        run_facebook_post_generator(post_type=post_type, state=state)
+        return
+
+    if mode == "fb-tracker":
+        from src.outreach.facebook_groups import run_fb_tracker
+        run_fb_tracker()
+        return
+
+    if mode == "fb-log":
+        from src.outreach.facebook_groups import log_group_post
+        group     = sys.argv[2] if len(sys.argv) > 2 else "Unknown Group"
+        post_type = sys.argv[3] if len(sys.argv) > 3 else "deal"
+        state     = sys.argv[4] if len(sys.argv) > 4 else ""
+        log_group_post(group, post_type, state)
+        return
+
     if mode in ("all", "buyers"):
         print("\n[3/7] BUYER ACQUISITION (Playwright — free)...")
         result = asyncio.run(run_playwright_buyer_scraper())
