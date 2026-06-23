@@ -13,22 +13,10 @@ from pydantic import BaseModel, validator
 from typing import Optional
 import re
 from supabase import create_client
-from twilio.rest import Client as TwilioClient
-from config import (
-    SUPABASE_URL, SUPABASE_KEY,
-    TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
-)
+from config import SUPABASE_URL, SUPABASE_KEY
 
 router   = APIRouter()
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-
-CONFIRMATION_SMS = (
-    "Welcome to the Tranchi AI deal list! "
-    "You'll get texts when we have a property that matches your buy box. "
-    "Reply YES to any deal to lock in details. "
-    "Reply STOP to opt out anytime. -TranchiAI"
-)
 
 
 # ── Input schema ──────────────────────────────────────────────
@@ -75,13 +63,11 @@ async def opt_in(req: OptInRequest):
     if existing.data:
         row = existing.data[0]
         if row.get("opt_out"):
-            # They had previously opted out — honour that
             raise HTTPException(
                 status_code=409,
-                detail="This number has opted out. Text UNSTOP to re-subscribe."
+                detail="This email has been unsubscribed. Reply to any previous email with RESUBSCRIBE."
             )
-        # Already on list — just confirm, don't duplicate
-        _send_confirmation(req.phone, req.name)
+        _send_confirmation(req.email, req.name, req.preferred_states)
         return {"status": "already_subscribed", "message": "Confirmation resent."}
 
     # Save new buyer
@@ -104,20 +90,18 @@ async def opt_in(req: OptInRequest):
         "score":                    _score(req),
     }).execute()
 
-    # Fire confirmation SMS
-    _send_confirmation(req.phone, req.name)
+    # Send confirmation email (primary) + SMS if Twilio configured
+    _send_confirmation(req.email, req.name, req.preferred_states)
 
     return {"status": "subscribed", "message": "Welcome to the list."}
 
 
-def _send_confirmation(phone: str, name: str) -> None:
-    first = name.split()[0] if name else "there"
-    msg   = f"Hey {first}! " + CONFIRMATION_SMS
+def _send_confirmation(email: str, name: str, states: list[str]) -> None:
+    from src.outreach.email_outreach import send_optin_confirmation
     try:
-        twilio.messages.create(body=msg, from_=TWILIO_FROM_NUMBER, to=phone)
+        send_optin_confirmation(name, email, states)
     except Exception as e:
-        # Don't fail the signup if SMS fails — log it
-        print(f"[OPT-IN SMS ERROR] {phone}: {e}")
+        print(f"[OPT-IN EMAIL ERROR] {email}: {e}")
 
 
 def _score(req: OptInRequest) -> int:

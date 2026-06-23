@@ -9,6 +9,7 @@ Requires: Google Calendar API credentials (service account or OAuth2)
 
 import json
 import pytz
+from typing import Optional
 from datetime import datetime, timedelta
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -238,6 +239,3 @@ def book_meeting_for_buyer(
         "meet_link": event["meet_link"],
         "time":      event["start_time"],
     }
-
-
-from typing import Optional

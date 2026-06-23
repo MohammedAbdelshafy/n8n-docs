@@ -23,12 +23,13 @@ Usage:
 
 import asyncio
 import sys
-from src.scrapers.crawl4ai_auction_scraper import run_crawl4ai_scraper
-from src.scrapers.playwright_buyer_scraper import run_playwright_buyer_scraper
-from src.underwriter.ai_underwriter        import run_underwriting
-from src.outreach.buyer_outreach           import run_outreach
-from src.sequences.outreach_sequence       import run_sequences
-from src.pipeline.deal_manager             import print_daily_report
+from src.scrapers.crawl4ai_auction_scraper  import run_crawl4ai_scraper
+from src.scrapers.playwright_buyer_scraper  import run_playwright_buyer_scraper
+from src.underwriter.ai_underwriter         import run_underwriting
+from src.outreach.email_outreach            import run_email_outreach
+from src.outreach.buyer_outreach            import run_outreach
+from src.sequences.outreach_sequence        import run_sequences
+from src.pipeline.deal_manager              import print_daily_report
 
 
 def main():
@@ -55,9 +56,14 @@ def main():
         print(f"     Found: {result['total_found']} | New saved: {result['saved']}")
 
     if mode in ("all", "outreach"):
-        print("\n[4/6] INITIAL BUYER OUTREACH...")
-        result = run_outreach()
-        print(f"     SMS sent: {result['sms_sent']}")
+        print("\n[4/6] BUYER OUTREACH (email primary, SMS fallback)...")
+        result = run_email_outreach()
+        print(f"     Emails sent: {result['emails_sent']}")
+        # SMS fallback if Twilio is configured
+        import os
+        if os.getenv("TWILIO_ACCOUNT_SID"):
+            sms = run_outreach()
+            print(f"     SMS sent: {sms['sms_sent']}")
 
     if mode in ("all", "sequences"):
         print("\n[5/6] FOLLOW-UP SEQUENCES...")

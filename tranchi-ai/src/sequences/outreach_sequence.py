@@ -84,11 +84,11 @@ def run_sequences() -> dict:
     sent_d1   = 0
     sent_d3   = 0
 
-    # Find all SENT outreach where status is still SENT (no reply yet)
+    # Find all SENT outreach (EMAIL or SMS) where status is still SENT (no reply)
     logs = supabase.table("outreach_log") \
-        .select("*, cash_buyers(name, phone, opt_out), auction_properties(address, city, state, estimated_arv, mao, auction_date)") \
+        .select("*, cash_buyers(name, phone, email, opt_out), auction_properties(address, city, state, estimated_arv, mao, auction_date)") \
         .eq("status", "SENT") \
-        .eq("channel", "SMS") \
+        .in_("channel", ["EMAIL", "SMS"]) \
         .execute()
 
     entries = logs.data or []
@@ -105,6 +105,7 @@ def run_sequences() -> dict:
         buyer_id    = entry["buyer_id"]
         property_id = entry["property_id"]
         phone       = buyer.get("phone")
+        email       = buyer.get("email")
         name        = buyer.get("name", "Investor")
         city        = prop.get("city", "")
         address     = prop.get("address", "")
@@ -112,7 +113,7 @@ def run_sequences() -> dict:
         mao         = prop.get("mao") or 0
         auction_dt  = prop.get("auction_date") or "TBD"
 
-        # Check if already received a follow-up on this day
+        # Check if already received a follow-up today
         already = supabase.table("outreach_log") \
             .select("id") \
             .eq("buyer_id", buyer_id) \
@@ -124,14 +125,31 @@ def run_sequences() -> dict:
             continue
 
         if days_ago == 1:
-            msg = build_day1_followup(name, address, city, arv, mao)
-            if send_followup(phone, msg, buyer_id, property_id, 1):
+            # Email first, SMS fallback
+            sent = False
+            if email:
+                from src.outreach.email_outreach import send_followup_email
+                full_prop = supabase.table("auction_properties").select("*").eq("id", property_id).single().execute().data or {}
+                full_buyer = supabase.table("cash_buyers").select("*").eq("id", buyer_id).single().execute().data or {}
+                sent = send_followup_email(full_buyer, full_prop, day=1)
+            if not sent and phone:
+                msg = build_day1_followup(name, address, city, arv, mao)
+                sent = send_followup(phone, msg, buyer_id, property_id, 1)
+            if sent:
                 sent_d1 += 1
                 print(f"  [D1 FOLLOWUP] {name} — {city}")
 
         elif days_ago == 3:
-            msg = build_day3_final(name, address, city, arv, mao, str(auction_dt))
-            if send_followup(phone, msg, buyer_id, property_id, 3):
+            sent = False
+            if email:
+                from src.outreach.email_outreach import send_followup_email
+                full_prop = supabase.table("auction_properties").select("*").eq("id", property_id).single().execute().data or {}
+                full_buyer = supabase.table("cash_buyers").select("*").eq("id", buyer_id).single().execute().data or {}
+                sent = send_followup_email(full_buyer, full_prop, day=3)
+            if not sent and phone:
+                msg = build_day3_final(name, address, city, arv, mao, str(auction_dt))
+                sent = send_followup(phone, msg, buyer_id, property_id, 3)
+            if sent:
                 sent_d3 += 1
                 print(f"  [D3 FINAL]    {name} — {city}")
 
