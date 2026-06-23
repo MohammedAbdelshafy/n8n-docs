@@ -13,7 +13,7 @@ import os
 from datetime import date
 from typing import Optional
 from supabase import create_client
-from config import SUPABASE_URL, SUPABASE_KEY, ANTHROPIC_API_KEY, TARGET_STATES
+from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -26,34 +26,20 @@ STATE_SLUGS = CONFIG["state_slugs"]
 
 # ── LLM extraction using Claude ───────────────────────────────
 def llm_extract_properties(html: str, prompt: str, source_name: str) -> list[dict]:
-    """Send raw HTML to Claude, get back structured property list."""
-    import anthropic
+    """Send raw HTML to LLM, get back structured property list. Uses free providers first."""
+    from src.utils.free_llm import call_llm
 
-    client  = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-
-    # Truncate HTML to fit context (keep first 80k chars)
-    html_snippet = html[:80000]
-
-    msg = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
-        max_tokens=4096,
-        system=(
-            "You are a data extraction assistant. Extract structured data from HTML. "
-            "Return ONLY a valid JSON array. No markdown, no explanation. "
-            "If no properties found, return an empty array []."
-        ),
-        messages=[{
-            "role": "user",
-            "content": f"{prompt}\n\nHTML:\n{html_snippet}"
-        }]
+    system = (
+        "You are a data extraction assistant. Extract structured data from HTML. "
+        "Return ONLY a valid JSON array. No markdown, no explanation. "
+        "If no properties found, return an empty array []."
     )
-
-    raw = msg.content[0].text.strip().strip("```json").strip("```").strip()
     try:
+        raw   = call_llm(system, f"{prompt}\n\nHTML:\n{html[:80_000]}", max_tokens=4096)
         items = json.loads(raw)
         return items if isinstance(items, list) else []
-    except json.JSONDecodeError:
-        print(f"  [CRAWL4AI] {source_name}: JSON parse error")
+    except Exception as e:
+        print(f"  [CRAWL4AI] {source_name}: {e}")
         return []
 
 

@@ -23,12 +23,11 @@ import json
 import re
 from datetime import datetime, timezone
 from playwright.async_api import async_playwright, Page
-from anthropic import Anthropic
 from supabase import create_client
-from config import SUPABASE_URL, SUPABASE_KEY, ANTHROPIC_API_KEY, CLAUDE_MODEL
+from src.utils.free_llm import call_llm
+from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase  = create_client(SUPABASE_URL, SUPABASE_KEY)
-anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
@@ -94,20 +93,13 @@ Do not include any explanation or markdown."""
 
 
 async def _llm_extract(html: str, county: str, state: str) -> list[dict]:
-    """Send page HTML to Claude for structured extraction."""
+    """Send page HTML to LLM for structured extraction. Uses free providers first."""
     try:
-        resp = anthropic.messages.create(
-            model=CLAUDE_MODEL,
+        raw   = call_llm(
+            "You extract structured real estate auction data from HTML. Return only valid JSON arrays.",
+            f"{EXTRACT_PROMPT}\n\nCounty: {county}, {state}\n\nHTML:\n{html[:80_000]}",
             max_tokens=4096,
-            system="You extract structured real estate auction data from HTML. Return only valid JSON arrays.",
-            messages=[{
-                "role": "user",
-                "content": f"{EXTRACT_PROMPT}\n\nCounty: {county}, {state}\n\nHTML:\n{html[:80_000]}"
-            }]
         )
-        raw = resp.content[0].text.strip().strip('`').strip()
-        if raw.startswith('json'):
-            raw = raw[4:].strip()
         items = json.loads(raw)
         return items if isinstance(items, list) else []
     except Exception as e:

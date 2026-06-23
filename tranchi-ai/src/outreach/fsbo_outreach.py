@@ -12,12 +12,11 @@ Goal: convert public FSBO listings into opt-in seller leads at $0 cost.
 """
 
 import os
-from anthropic import Anthropic
 from supabase import create_client
-from config import SUPABASE_URL, SUPABASE_KEY, CLAUDE_MODEL, EMAIL_ADDRESS
+from src.utils.free_llm import call_llm
+from config import SUPABASE_URL, SUPABASE_KEY, EMAIL_ADDRESS
 
-supabase  = create_client(SUPABASE_URL, SUPABASE_KEY)
-anthropic = Anthropic()
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 AUTO_SEND = os.getenv("EMAIL_AUTO_SEND", "false").lower() == "true"
 MAX_PER_RUN = int(os.getenv("FSBO_OUTREACH_LIMIT", "20"))
@@ -69,18 +68,8 @@ The buyer (me) pays cash, closes in 14 days, buys as-is, no agent fees.
 Ask them to reply or call/text if they want a no-obligation cash offer."""
 
     try:
-        resp = anthropic.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=400,
-            system=SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
         import json
-        text = resp.content[0].text.strip()
-        # Strip markdown fences if present
-        text = text.strip('`').strip()
-        if text.startswith('json'):
-            text = text[4:].strip()
+        text = call_llm(SYSTEM, prompt, max_tokens=400)
         return json.loads(text)
     except Exception as e:
         print(f"  [FSBO AI] Draft error for {addr}: {e}")

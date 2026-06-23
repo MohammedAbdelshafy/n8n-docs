@@ -6,16 +6,15 @@ gets back a structured investment decision, and updates Supabase.
 import json
 import asyncio
 from datetime import date
-from anthropic import Anthropic
 from supabase import create_client
+from src.utils.free_llm import call_llm, which_provider
 from config import (
-    SUPABASE_URL, SUPABASE_KEY, ANTHROPIC_API_KEY, CLAUDE_MODEL,
+    SUPABASE_URL, SUPABASE_KEY,
     MAO_MULTIPLIER, FLAT_CLOSING_COST, FLAT_HOLDING_COST,
     REPAIR_RATE, CONDITION_MULTIPLIER, MIN_NET_PROFIT
 )
 
-client    = Anthropic(api_key=ANTHROPIC_API_KEY)
-supabase  = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Load the system prompt once
 with open("prompts/underwriter_system_prompt.txt") as f:
@@ -91,27 +90,7 @@ def underwrite_property(prop: dict) -> dict:
         "nearby_comps":  comps,
     }
 
-    message = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Underwrite this property:\n\n{json.dumps(payload, indent=2)}"
-            }
-        ]
-    )
-
-    raw = message.content[0].text.strip()
-
-    # Strip markdown code fences if Claude added them
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
-
+    raw      = call_llm(SYSTEM_PROMPT, f"Underwrite this property:\n\n{json.dumps(payload, indent=2)}", max_tokens=1024)
     decision = json.loads(raw)
     return decision
 
@@ -157,6 +136,7 @@ def run_underwriting() -> dict:
 
     properties = result.data or []
     print(f"Properties to underwrite: {len(properties)}")
+    print(f"LLM provider: {which_provider()}")
 
     approved = 0
     rejected = 0

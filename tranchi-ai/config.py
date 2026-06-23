@@ -7,9 +7,11 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Anthropic
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
+# LLM — free providers tried first, Anthropic as fallback
+# Get a free key at console.groq.com (no credit card needed)
+GROQ_API_KEY      = os.getenv("GROQ_API_KEY")
+GEMINI_API_KEY    = os.getenv("GEMINI_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")  # optional paid fallback
 
 # Email — primary outreach channel (free via Gmail SMTP)
 EMAIL_ADDRESS      = os.getenv("EMAIL_ADDRESS", "")
@@ -23,11 +25,8 @@ TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN  = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER")
 
-# Apify (Google Maps / comp scraping)
-APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN")
-
-# BatchData (property enrichment)
-BATCHDATA_API_KEY = os.getenv("BATCHDATA_API_KEY")
+# Removed: APIFY_API_TOKEN (replaced by free Playwright scraper)
+# Removed: BATCHDATA_API_KEY (replaced by free Zillow comps)
 
 # Target states for deal hunting
 TARGET_STATES = ["TX", "FL", "OH", "GA", "NC", "TN", "AZ"]
