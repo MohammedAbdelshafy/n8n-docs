@@ -1,0 +1,11 @@
+.env
+*.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+google_credentials.json
+exports/
+*.csv
