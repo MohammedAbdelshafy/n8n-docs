@@ -9,3 +9,7 @@ google-auth>=2.35.0
 google-api-python-client>=2.150.0
 pytz>=2024.1
 python-multipart>=0.0.12
+
+# Free scraping stack (replaces $49/mo Apify)
+playwright>=1.49.0
+crawl4ai>=0.4.0

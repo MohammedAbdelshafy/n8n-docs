@@ -1,0 +1,86 @@
+{
+  "google_maps_queries": [
+    "we buy houses cash",
+    "real estate investor",
+    "cash home buyer",
+    "house flipping company",
+    "real estate wholesaler",
+    "property investor cash offers",
+    "sell my house fast"
+  ],
+
+  "target_cities": {
+    "TX": ["Houston", "Dallas", "San Antonio", "Fort Worth", "Austin", "El Paso", "Arlington"],
+    "FL": ["Miami", "Tampa", "Orlando", "Jacksonville", "Fort Lauderdale", "St Petersburg"],
+    "OH": ["Columbus", "Cleveland", "Cincinnati", "Dayton", "Akron", "Toledo"],
+    "GA": ["Atlanta", "Savannah", "Augusta", "Macon", "Columbus", "Sandy Springs"],
+    "NC": ["Charlotte", "Raleigh", "Greensboro", "Durham", "Winston-Salem", "Fayetteville"],
+    "TN": ["Nashville", "Memphis", "Knoxville", "Chattanooga", "Clarksville", "Murfreesboro"],
+    "AZ": ["Phoenix", "Tucson", "Mesa", "Scottsdale", "Chandler", "Tempe", "Gilbert"]
+  },
+
+  "auction_sources": [
+    {
+      "name": "HUD_HOMES",
+      "url": "https://www.hudhomestore.gov/Listing/PropertySearchResult.aspx",
+      "params": {"StateCode": "{state}", "StatusCode": "ACT", "SearchType": "A"},
+      "property_selector": ".property-listing",
+      "fields": {
+        "address": ".prop-address",
+        "price":   ".bid-price",
+        "beds":    ".beds",
+        "baths":   ".baths",
+        "sqft":    ".sqft",
+        "url":     "a[href]"
+      },
+      "llm_extract": false,
+      "rate_limit_seconds": 2
+    },
+    {
+      "name": "GOVEASE_TAX_SALE",
+      "url": "https://www.govease.com/auctions/search",
+      "params": {"state": "{state_slug}", "status": "upcoming"},
+      "llm_extract": true,
+      "llm_prompt": "Extract all auction property listings. For each property return: address, city, state, opening_bid, auction_date, parcel_id, property_type, and url. Return as JSON array.",
+      "rate_limit_seconds": 3
+    },
+    {
+      "name": "AUCTION_COM",
+      "url": "https://www.auction.com/residential/?states={state}&priceMin=1000&priceMax=150000",
+      "llm_extract": true,
+      "llm_prompt": "Extract all property auction listings. For each return: address, city, state, opening_bid, auction_date, bedrooms, bathrooms, sqft, property_type, url. Return as JSON array.",
+      "rate_limit_seconds": 3
+    },
+    {
+      "name": "FANNIE_MAE",
+      "url": "https://www.homepath.com/listings.html#/search?state={state}&maxListPrice=150000",
+      "llm_extract": true,
+      "llm_prompt": "Extract all HomePath property listings. For each return: address, city, state, list_price, bedrooms, bathrooms, sqft, year_built, url. Return as JSON array.",
+      "rate_limit_seconds": 2
+    },
+    {
+      "name": "BID4ASSETS",
+      "url": "https://www.bid4assets.com/searchsales?q=&state={state}&category=Real+Estate",
+      "llm_extract": true,
+      "llm_prompt": "Extract all real estate auction listings. For each return: title, address, city, state, opening_bid, auction_date, url. Return as JSON array.",
+      "rate_limit_seconds": 3
+    }
+  ],
+
+  "state_slugs": {
+    "TX": "texas", "FL": "florida", "OH": "ohio",
+    "GA": "georgia", "NC": "north-carolina",
+    "TN": "tennessee", "AZ": "arizona"
+  },
+
+  "playwright_settings": {
+    "headless": true,
+    "timeout_ms": 30000,
+    "viewport": {"width": 1280, "height": 800},
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "zoom_levels": [14, 15, 16],
+    "max_results_per_query": 40
+  },
+
+  "proxies": []
+}

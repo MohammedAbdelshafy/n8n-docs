@@ -2,9 +2,9 @@
 TRANCHI AI — Full Pipeline Orchestrator
 Run daily (or multiple times/day) to work the full funnel:
 
-  1. scrape     — pull new properties from government auctions
+  1. scrape     — pull properties: Crawl4AI (free) + Apify fallback
   2. underwrite — Claude AI scores every new property
-  3. buyers     — find & add new cash buyers to your list
+  3. buyers     — find cash buyers: Playwright Google Maps (free)
   4. outreach   — SMS approved deals to opted-in buyers
   5. sequences  — fire Day 1 / Day 3 follow-ups
   6. report     — daily KPI dashboard
@@ -12,9 +12,9 @@ Run daily (or multiple times/day) to work the full funnel:
 
 Usage:
   python main.py              # full daily run (steps 1–6)
-  python main.py scrape       # just step 1
+  python main.py scrape       # just step 1 (auction properties)
   python main.py underwrite   # just step 2
-  python main.py buyers       # just step 3
+  python main.py buyers       # just step 3 (find cash buyers)
   python main.py outreach     # just step 4
   python main.py sequences    # just step 5
   python main.py report       # just step 6
@@ -23,12 +23,12 @@ Usage:
 
 import asyncio
 import sys
-from src.scrapers.auction_scraper   import run_ingestion
-from src.underwriter.ai_underwriter import run_underwriting
-from src.buyers.cash_buyer_finder   import run_buyer_acquisition
-from src.outreach.buyer_outreach    import run_outreach
-from src.sequences.outreach_sequence import run_sequences
-from src.pipeline.deal_manager      import print_daily_report
+from src.scrapers.crawl4ai_auction_scraper import run_crawl4ai_scraper
+from src.scrapers.playwright_buyer_scraper import run_playwright_buyer_scraper
+from src.underwriter.ai_underwriter        import run_underwriting
+from src.outreach.buyer_outreach           import run_outreach
+from src.sequences.outreach_sequence       import run_sequences
+from src.pipeline.deal_manager             import print_daily_report
 
 
 def main():
@@ -40,8 +40,8 @@ def main():
         return
 
     if mode in ("all", "scrape"):
-        print("\n[1/6] SCRAPING GOVERNMENT AUCTIONS...")
-        result = asyncio.run(run_ingestion())
+        print("\n[1/6] SCRAPING GOVERNMENT AUCTIONS (Crawl4AI — free)...")
+        result = asyncio.run(run_crawl4ai_scraper())
         print(f"     Found: {result['total_found']} | Saved: {result['saved']}")
 
     if mode in ("all", "underwrite"):
@@ -50,8 +50,8 @@ def main():
         print(f"     Approved: {result['approved']} | Rejected: {result['rejected']}")
 
     if mode in ("all", "buyers"):
-        print("\n[3/6] BUYER ACQUISITION...")
-        result = asyncio.run(run_buyer_acquisition())
+        print("\n[3/6] BUYER ACQUISITION (Playwright — free)...")
+        result = asyncio.run(run_playwright_buyer_scraper())
         print(f"     Found: {result['total_found']} | New saved: {result['saved']}")
 
     if mode in ("all", "outreach"):
