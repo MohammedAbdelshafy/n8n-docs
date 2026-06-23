@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get a Cash Offer on Your House — In 24 Hours</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--green:#1f9d55;--green-lt:#27c065;--dark:#0a0f0c;--card:#121814;--border:#1f2a22;--text:#f0f0f0;--muted:#8a978f}
+    body{font-family:'Inter',sans-serif;background:var(--dark);color:var(--text);min-height:100vh}
+    .hero{padding:56px 24px 32px;text-align:center;max-width:680px;margin:0 auto}
+    .badge{display:inline-block;background:rgba(39,192,101,.12);border:1px solid rgba(39,192,101,.4);color:var(--green-lt);font-size:12px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;padding:6px 16px;border-radius:100px;margin-bottom:20px}
+    h1{font-size:clamp(30px,6vw,50px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:16px}
+    h1 span{color:var(--green-lt)}
+    .subtitle{font-size:18px;color:var(--muted);line-height:1.6;margin-bottom:0}
+    .trust{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin:28px 0 0}
+    .trust div{font-size:13px;color:var(--muted)}
+    .trust strong{color:var(--green-lt);display:block;font-size:22px;font-weight:800}
+    .form-wrap{max-width:540px;margin:0 auto;padding:24px 24px 80px}
+    .form-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px}
+    .form-card h2{font-size:22px;font-weight:700;margin-bottom:4px}
+    .form-card p.sub{font-size:14px;color:var(--muted);margin-bottom:24px}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{font-size:13px;font-weight:600;color:#cdd6cf}
+    label .req{color:var(--green-lt)}
+    input,select{background:#1a221d;border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:15px;padding:12px 14px;width:100%;appearance:none}
+    input:focus,select:focus{outline:none;border-color:var(--green)}
+    input::placeholder{color:#3a463e}
+    .divider{border:none;border-top:1px solid var(--border);margin:22px 0}
+    .consent{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px}
+    .consent input{width:18px;height:18px;min-width:18px;margin-top:1px;accent-color:var(--green)}
+    .consent label{font-size:11.5px;color:#6f7c73;line-height:1.6;font-weight:400}
+    .btn{width:100%;background:var(--green);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:700;padding:16px;cursor:pointer;letter-spacing:.3px}
+    .btn:hover{background:var(--green-lt)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .note{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
+    .err{color:#e05252;font-size:13px;margin-top:14px;display:none}
+    footer{border-top:1px solid var(--border);text-align:center;padding:24px;font-size:12px;color:#3a463e}
+    @media(max-width:480px){.row{grid-template-columns:1fr}.form-card{padding:26px 20px}}
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="badge">No Fees · No Repairs · No Obligation</div>
+    <h1>Get a <span>Cash Offer</span><br>On Your House in 24 Hours</h1>
+    <p class="subtitle">Tell us about your property and get a fair, no-obligation cash offer. Sell as-is, close on your timeline — or just see what it's worth.</p>
+    <div class="trust">
+      <div><strong>24hr</strong>Offer turnaround</div>
+      <div><strong>$0</strong>Fees or commissions</div>
+      <div><strong>AS-IS</strong>No repairs needed</div>
+    </div>
+  </div>
+
+  <div class="form-wrap">
+    <div class="form-card">
+      <h2>Get My Cash Offer</h2>
+      <p class="sub">Takes 60 seconds. No obligation to accept.</p>
+
+      <form id="sellerForm" novalidate>
+        <div class="field">
+          <label for="address">Property Address <span class="req">*</span></label>
+          <input type="text" id="address" placeholder="123 Main St, Cleveland OH" required />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="name">Your Name <span class="req">*</span></label>
+            <input type="text" id="name" placeholder="Jane Smith" required />
+          </div>
+          <div class="field">
+            <label for="phone">Phone <span class="req">*</span></label>
+            <input type="tel" id="phone" placeholder="(555) 000-0000" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="you@email.com" required />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="timeline">How soon to sell?</label>
+            <select id="timeline">
+              <option value="">Select</option>
+              <option value="ASAP">As soon as possible</option>
+              <option value="1-3_MONTHS">1–3 months</option>
+              <option value="3-6_MONTHS">3–6 months</option>
+              <option value="JUST_CURIOUS">Just curious about value</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="condition">Condition</label>
+            <select id="condition">
+              <option value="">Select</option>
+              <option value="EXCELLENT">Excellent</option>
+              <option value="GOOD">Good</option>
+              <option value="FAIR">Fair</option>
+              <option value="POOR">Needs work</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="reason">Reason for selling (optional)</label>
+          <select id="reason">
+            <option value="">Prefer not to say</option>
+            <option value="RELOCATING">Relocating</option>
+            <option value="INHERITED">Inherited property</option>
+            <option value="REPAIRS">Too many repairs</option>
+            <option value="FINANCIAL">Financial reasons</option>
+            <option value="TIRED_LANDLORD">Tired of being a landlord</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="consent">
+          <input type="checkbox" id="consent" />
+          <label for="consent">
+            I agree to be contacted by phone, text, and email about a cash offer for my property.
+            I understand consent is not a condition of any sale and I can opt out anytime by replying STOP or UNSUBSCRIBE.
+            Message &amp; data rates may apply. I've read the <a href="/privacy" style="color:var(--green-lt)">Privacy Policy</a>.
+          </label>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">Get My Cash Offer →</button>
+        <p class="note">100% free. No obligation. Your info is never sold without your consent.</p>
+        <p class="err" id="err"></p>
+      </form>
+    </div>
+  </div>
+
+  <footer>© 2025 Tranchi AI · Opt out anytime: reply STOP · We buy houses as-is for cash</footer>
+
+  <script>
+    document.getElementById('phone').addEventListener('input',e=>{
+      let v=e.target.value.replace(/\D/g,'').slice(0,10);
+      if(v.length>=6)v=`(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
+      else if(v.length>=3)v=`(${v.slice(0,3)}) ${v.slice(3)}`;
+      e.target.value=v;
+    });
+
+    document.getElementById('sellerForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const err=document.getElementById('err'),btn=document.getElementById('submitBtn');
+      err.style.display='none';
+      const address=document.getElementById('address').value.trim();
+      const name=document.getElementById('name').value.trim();
+      const phone=document.getElementById('phone').value.replace(/\D/g,'');
+      const email=document.getElementById('email').value.trim();
+      const consent=document.getElementById('consent').checked;
+
+      const fail=m=>{err.textContent=m;err.style.display='block';};
+      if(!address)return fail('Please enter your property address.');
+      if(!name)return fail('Please enter your name.');
+      if(phone.length<10)return fail('Please enter a valid 10-digit phone number.');
+      if(!email.includes('@'))return fail('Please enter a valid email.');
+      if(!consent)return fail('Please check the consent box so we can send your offer.');
+
+      btn.disabled=true;btn.textContent='Getting your offer…';
+
+      const consentText=document.querySelector('.consent label').innerText.trim();
+      const payload={
+        name,address,
+        phone:`+1${phone}`,email,
+        timeline:document.getElementById('timeline').value,
+        condition:document.getElementById('condition').value,
+        reason:document.getElementById('reason').value,
+        consent_given:true,
+        consent_text:consentText
+      };
+
+      try{
+        const res=await fetch('/api/seller-lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(res.ok){window.location.href='/seller-thanks.html';}
+        else{fail(data.detail||'Something went wrong. Try again.');btn.disabled=false;btn.textContent='Get My Cash Offer →';}
+      }catch(ex){fail('Network error. Try again.');btn.disabled=false;btn.textContent='Get My Cash Offer →';}
+    });
+  </script>
+</body>
+</html>

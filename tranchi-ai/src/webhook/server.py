@@ -24,23 +24,35 @@ from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_AUTH_TOKEN
 from src.meetings.google_meet import book_meeting_for_buyer
 from src.outreach.buyer_outreach import handle_opt_out
 from src.webhook.opt_in import router as opt_in_router
+from src.webhook.seller_optin import router as seller_router
 
 app      = FastAPI(title="Tranchi AI")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Mount the opt-in API
+# Mount the opt-in APIs (buyer + seller)
 app.include_router(opt_in_router)
+app.include_router(seller_router)
 
 # Serve the funnel HTML files
 FUNNEL_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "funnel")
 
 @app.get("/")
 async def landing():
+    # Buyer funnel at root
     return FileResponse(os.path.join(FUNNEL_DIR, "index.html"))
 
 @app.get("/thank-you.html")
 async def thank_you():
     return FileResponse(os.path.join(FUNNEL_DIR, "thank-you.html"))
+
+@app.get("/sell")
+async def seller_landing():
+    # Seller funnel ("get a cash offer")
+    return FileResponse(os.path.join(FUNNEL_DIR, "seller.html"))
+
+@app.get("/seller-thanks.html")
+async def seller_thanks():
+    return FileResponse(os.path.join(FUNNEL_DIR, "seller-thanks.html"))
 
 YES_PATTERNS  = re.compile(r"\b(yes|yeah|yep|interested|in|send|tell me more|details|absolutely|sure|let'?s go)\b", re.I)
 NO_PATTERNS   = re.compile(r"\b(no|nope|pass|not interested|remove|don'?t|stop texting)\b", re.I)
