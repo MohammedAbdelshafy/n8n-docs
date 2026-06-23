@@ -8,30 +8,83 @@
     "property investor cash offers",
     "sell my house fast"
   ],
-
   "target_cities": {
-    "TX": ["Houston", "Dallas", "San Antonio", "Fort Worth", "Austin", "El Paso", "Arlington"],
-    "FL": ["Miami", "Tampa", "Orlando", "Jacksonville", "Fort Lauderdale", "St Petersburg"],
-    "OH": ["Columbus", "Cleveland", "Cincinnati", "Dayton", "Akron", "Toledo"],
-    "GA": ["Atlanta", "Savannah", "Augusta", "Macon", "Columbus", "Sandy Springs"],
-    "NC": ["Charlotte", "Raleigh", "Greensboro", "Durham", "Winston-Salem", "Fayetteville"],
-    "TN": ["Nashville", "Memphis", "Knoxville", "Chattanooga", "Clarksville", "Murfreesboro"],
-    "AZ": ["Phoenix", "Tucson", "Mesa", "Scottsdale", "Chandler", "Tempe", "Gilbert"]
+    "TX": [
+      "Houston",
+      "Dallas",
+      "San Antonio",
+      "Fort Worth",
+      "Austin",
+      "El Paso",
+      "Arlington"
+    ],
+    "FL": [
+      "Miami",
+      "Tampa",
+      "Orlando",
+      "Jacksonville",
+      "Fort Lauderdale",
+      "St Petersburg"
+    ],
+    "OH": [
+      "Columbus",
+      "Cleveland",
+      "Cincinnati",
+      "Dayton",
+      "Akron",
+      "Toledo"
+    ],
+    "GA": [
+      "Atlanta",
+      "Savannah",
+      "Augusta",
+      "Macon",
+      "Columbus",
+      "Sandy Springs"
+    ],
+    "NC": [
+      "Charlotte",
+      "Raleigh",
+      "Greensboro",
+      "Durham",
+      "Winston-Salem",
+      "Fayetteville"
+    ],
+    "TN": [
+      "Nashville",
+      "Memphis",
+      "Knoxville",
+      "Chattanooga",
+      "Clarksville",
+      "Murfreesboro"
+    ],
+    "AZ": [
+      "Phoenix",
+      "Tucson",
+      "Mesa",
+      "Scottsdale",
+      "Chandler",
+      "Tempe",
+      "Gilbert"
+    ]
   },
-
   "auction_sources": [
     {
       "name": "HUD_HOMES",
       "url": "https://www.hudhomestore.gov/Listing/PropertySearchResult.aspx",
-      "params": {"StateCode": "{state}", "StatusCode": "ACT", "SearchType": "A"},
+      "params": {
+        "StateCode": "{state}",
+        "StatusCode": "ACT",
+        "SearchType": "A"
+      },
       "property_selector": ".property-listing",
       "fields": {
         "address": ".prop-address",
-        "price":   ".bid-price",
-        "beds":    ".beds",
-        "baths":   ".baths",
-        "sqft":    ".sqft",
-        "url":     "a[href]"
+        "price": ".bid-price",
+        "beds": ".beds",
+        "baths": ".baths",
+        "sqft": ".sqft",
+        "url": "a[href]"
       },
       "llm_extract": false,
       "rate_limit_seconds": 2
@@ -39,7 +92,10 @@
     {
       "name": "GOVEASE_TAX_SALE",
       "url": "https://www.govease.com/auctions/search",
-      "params": {"state": "{state_slug}", "status": "upcoming"},
+      "params": {
+        "state": "{state_slug}",
+        "status": "upcoming"
+      },
       "llm_extract": true,
       "llm_prompt": "Extract all auction property listings. For each property return: address, city, state, opening_bid, auction_date, parcel_id, property_type, and url. Return as JSON array.",
       "rate_limit_seconds": 3
@@ -66,21 +122,59 @@
       "rate_limit_seconds": 3
     }
   ],
-
   "state_slugs": {
-    "TX": "texas", "FL": "florida", "OH": "ohio",
-    "GA": "georgia", "NC": "north-carolina",
-    "TN": "tennessee", "AZ": "arizona"
+    "TX": "texas",
+    "FL": "florida",
+    "OH": "ohio",
+    "GA": "georgia",
+    "NC": "north-carolina",
+    "TN": "tennessee",
+    "AZ": "arizona"
   },
-
   "playwright_settings": {
     "headless": true,
     "timeout_ms": 30000,
-    "viewport": {"width": 1280, "height": 800},
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "zoom_levels": [14, 15, 16],
+    "zoom_levels": [
+      14,
+      15,
+      16
+    ],
     "max_results_per_query": 40
   },
-
-  "proxies": []
+  "proxies": [],
+  "free_lead_sources": {
+    "craigslist_buyer_queries": [
+      "we buy houses",
+      "cash home buyer",
+      "real estate investor",
+      "house flipping"
+    ],
+    "craigslist_fsbo_query": "for sale by owner",
+    "reddit_buyer_subreddits": [
+      "WholesaleRealEstate",
+      "realestateinvesting",
+      "realestate"
+    ],
+    "zillow_fsbo_states": [
+      "TX",
+      "FL",
+      "OH",
+      "GA",
+      "NC",
+      "TN",
+      "AZ"
+    ],
+    "lead_sell_platforms": [
+      "r/WholesaleRealEstate",
+      "r/realestateinvesting",
+      "Facebook Real Estate Investor groups",
+      "BiggerPockets Marketplace"
+    ],
+    "notes": "All free. Craigslist and Reddit use public APIs/RSS. Zillow uses Playwright."
+  }
 }
