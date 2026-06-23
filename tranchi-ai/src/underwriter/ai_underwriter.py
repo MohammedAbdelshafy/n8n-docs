@@ -47,38 +47,12 @@ def estimate_repairs(sqft: int, year_built: int, condition: str) -> float:
 
 
 # ============================================================
-# FETCH COMPS from Supabase (or BatchData — placeholder)
+# FETCH COMPS — free Zillow sold data (no API key needed)
 # ============================================================
-def fetch_comps(zip_code: str, sqft: int) -> list[dict]:
-    """
-    Pull recent sold comps. In production, hit BatchData API.
-    Returns list of {address, sold_price, sqft, sold_date}.
-    """
-    # BatchData comps endpoint (configure BATCHDATA_API_KEY in .env)
-    import httpx
-    from config import BATCHDATA_API_KEY
-
-    if not BATCHDATA_API_KEY:
-        return []
-
-    try:
-        r = httpx.post(
-            "https://api.batchdata.com/api/v1/property/comps",
-            headers={"Authorization": f"Bearer {BATCHDATA_API_KEY}"},
-            json={
-                "zipCode": zip_code,
-                "sqftMin": max(0, sqft - 200),
-                "sqftMax": sqft + 300,
-                "soldWithinDays": 90,
-                "limit": 5,
-            },
-            timeout=15,
-        )
-        data = r.json()
-        return data.get("comps", [])
-    except Exception as e:
-        print(f"[COMPS] BatchData error: {e}")
-        return []
+def fetch_comps(zip_code: str, sqft: int, beds: int = 0) -> list[dict]:
+    """Pull recent sold comps from Zillow. Free, no API key needed."""
+    from src.underwriter.free_comps import get_comps
+    return get_comps(zip_code, sqft=sqft, beds=beds)
 
 
 # ============================================================
@@ -100,7 +74,7 @@ def underwrite_property(prop: dict) -> dict:
             "sms_draft": None,
         }
 
-    comps = fetch_comps(prop.get("zip", ""), prop.get("sqft", 0))
+    comps = fetch_comps(prop.get("zip", ""), prop.get("sqft", 0), prop.get("bedrooms", 0))
 
     payload = {
         "address":       prop.get("address"),

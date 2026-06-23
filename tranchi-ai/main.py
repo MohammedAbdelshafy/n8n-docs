@@ -99,6 +99,20 @@ def main():
         result = run_underwriting()
         print(f"     Approved: {result['approved']} | Rejected: {result['rejected']}")
 
+    if mode == "deal-hunt":
+        # Full pipeline: county + national scrape → AI underwrite → show top deals
+        from src.pipeline.deal_hunter import run_deal_hunter
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        fast   = "--fast" in sys.argv
+        run_deal_hunter(states=states, fast=fast)
+        return
+
+    if mode == "deals":
+        # Show current approved deal dashboard (no scraping)
+        from src.pipeline.deal_hunter import deal_dashboard
+        deal_dashboard()
+        return
+
     if mode == "buyers-all":
         from src.scrapers.buyer_aggregator import run_buyer_aggregator
         run_buyer_aggregator()
