@@ -9,7 +9,7 @@ the timestamp and source are logged for TCPA compliance.
 
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import Optional
 import re
 from config import SUPABASE_URL, SUPABASE_KEY
@@ -40,8 +40,9 @@ class OptInRequest(BaseModel):
     max_purchase_price:       Optional[int] = None
     preferred_property_types: Optional[list[str]] = None
 
-    @validator("phone")
-    def clean_phone(cls, v):
+    @field_validator("phone")
+    @classmethod
+    def clean_phone(cls, v: str) -> str:
         digits = re.sub(r"\D", "", v)
         if len(digits) == 10:
             return f"+1{digits}"
@@ -49,14 +50,16 @@ class OptInRequest(BaseModel):
             return f"+{digits}"
         raise ValueError("Phone must be a valid 10-digit US number.")
 
-    @validator("email")
-    def clean_email(cls, v):
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, v: str) -> str:
         if "@" not in v or "." not in v.split("@")[-1]:
             raise ValueError("Invalid email address.")
         return v.lower().strip()
 
-    @validator("preferred_states")
-    def states_not_empty(cls, v):
+    @field_validator("preferred_states")
+    @classmethod
+    def states_not_empty(cls, v: list) -> list:
         if not v:
             raise ValueError("Select at least one state.")
         return v
