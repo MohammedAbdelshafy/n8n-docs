@@ -8,6 +8,8 @@ services:
     envVars:
       - key: GROQ_API_KEY
         sync: false
+      - key: GLM_API_KEY
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY

@@ -13,6 +13,7 @@ TRANCHI AI — Full Pipeline Orchestrator
   10. import-zillow  — import Property Data Labs CSV export
   11. outreach-fsbo  — AI-draft emails to FSBO prospects
   12. webhook        — start the inbound SMS/form server
+  13. lis-pendens    — scrape pre-foreclosure filings from county clerk portals (FREE)
 
 Usage:
   python main.py                            # full daily run
@@ -28,6 +29,8 @@ Usage:
   python main.py import-zillow file.csv     # import Zillow Data Exporter CSV
   python main.py outreach-fsbo              # AI emails to FSBO prospects
   python main.py buyers-all                 # ALL buyer scrapers in one shot
+  python main.py lis-pendens                # scrape lis pendens (all FL counties)
+  python main.py lis-pendens Miami-Dade     # single county
   python main.py webhook                    # start inbound server (Railway)
 """
 
@@ -75,6 +78,14 @@ def main():
         run_fsbo_outreach()
         return
 
+    if mode == "lis-pendens":
+        from src.scrapers.lis_pendens_scraper import run_lis_pendens_scraper
+        counties = sys.argv[2:] if len(sys.argv) > 2 else None
+        result = asyncio.run(run_lis_pendens_scraper(counties=counties))
+        print(f"\n[LIS_PENDENS] {result['total_found']} filings found | {result['saved']} new leads saved")
+        print(f"  Counties: {', '.join(result['counties'])}")
+        return
+
     if mode == "prospects":
         print("\n[PROSPECTS] Craigslist FSBO + buyers (RSS — free)...")
         from src.scrapers.craigslist_scraper import run_craigslist_scraper
@@ -90,9 +101,14 @@ def main():
         return
 
     if mode in ("all", "scrape"):
-        print("\n[1/7] SCRAPING GOVERNMENT AUCTIONS (Crawl4AI — free)...")
+        print("\n[1/8] SCRAPING GOVERNMENT AUCTIONS (Crawl4AI — free)...")
         result = asyncio.run(run_crawl4ai_scraper())
         print(f"     Found: {result['total_found']} | Saved: {result['saved']}")
+
+        print("\n[1b/8] LIS PENDENS — pre-foreclosure leads (county clerk — free)...")
+        from src.scrapers.lis_pendens_scraper import run_lis_pendens_scraper
+        lp = asyncio.run(run_lis_pendens_scraper())
+        print(f"     Found: {lp['total_found']} | Saved: {lp['saved']}")
 
     if mode in ("all", "underwrite"):
         print("\n[2/7] AI UNDERWRITING...")
