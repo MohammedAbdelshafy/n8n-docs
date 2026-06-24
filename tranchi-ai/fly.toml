@@ -1,0 +1,22 @@
+# Fly.io config — `fly launch --no-deploy` then `fly deploy`.
+# Set secrets first:  fly secrets set GROQ_API_KEY=... SUPABASE_KEY=... etc.
+app = "tranchi-ai"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  RUN_HOUR_UTC = "13"
+  YOUR_TIMEZONE = "America/Chicago"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false   # always-on so the scheduler keeps running
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

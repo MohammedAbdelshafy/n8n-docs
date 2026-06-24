@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: tranchi-ai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      - key: EMAIL_ADDRESS
+        sync: false
+      - key: EMAIL_APP_PASSWORD
+        sync: false
+      - key: REPLY_TO_EMAIL
+        sync: false
+      - key: RUN_HOUR_UTC
+        value: "13"
+      - key: YOUR_TIMEZONE
+        value: America/Chicago
