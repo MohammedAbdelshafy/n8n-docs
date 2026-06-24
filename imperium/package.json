@@ -8,10 +8,14 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.74",
+    "@langchain/langgraph": "^1.4.5",
     "@supabase/server": "^1.1.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
+    "ai": "^6.0.209",
     "next": "16.2.9",
+    "openai": "^6.44.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
