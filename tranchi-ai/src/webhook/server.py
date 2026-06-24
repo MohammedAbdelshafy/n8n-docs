@@ -20,7 +20,7 @@ import base64
 import os
 from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_AUTH_TOKEN
 
-app = FastAPI(title="Tranchi AI")
+app = FastAPI(title="Hola AI")
 
 # Lazy Supabase client — not created at import time so the process starts
 # even when env vars haven't propagated yet (e.g. first Railway boot).
@@ -59,7 +59,7 @@ def _funnel(filename: str):
     path = os.path.join(FUNNEL_DIR, filename)
     if os.path.exists(path):
         return FileResponse(path)
-    return JSONResponse({"status": "ok", "service": "Tranchi AI"})
+    return JSONResponse({"status": "ok", "service": "Hola AI"})
 
 @app.get("/")
 async def landing():
@@ -212,7 +212,7 @@ async def inbound_sms(
 # ============================================================
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "Tranchi AI SMS Webhook"}
+    return {"status": "ok", "service": "Hola AI SMS Webhook"}
 
 
 if __name__ == "__main__":

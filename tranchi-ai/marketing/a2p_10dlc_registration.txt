@@ -16,7 +16,7 @@ Business City/State:    [YOUR CITY, STATE]
 STEP 2: CAMPAIGN REGISTRATION
 ====================================
 Use Case:               Marketing
-Campaign Name:          Tranchi AI Deal Alerts
+Campaign Name:          Hola AI Deal Alerts
 
 Campaign Description (copy-paste this exactly):
 "We send real estate deal alerts via SMS to opted-in cash buyers and real estate
@@ -26,16 +26,16 @@ property details (address, ARV, asking price) for off-market properties sourced 
 government auctions. Recipients can reply STOP at any time to opt out."
 
 Sample Message 1 (copy-paste):
-"[A+ DEAL] 3/2 SFR Memphis, TN. ARV $90K. Asking $34K AS-IS. Cash only, 14-day close. Reply YES for details or STOP to opt out. -TranchiAI"
+"[A+ DEAL] 3/2 SFR Memphis, TN. ARV $90K. Asking $34K AS-IS. Cash only, 14-day close. Reply YES for details or STOP to opt out. -HolaAI"
 
 Sample Message 2 (copy-paste):
-"Hey Marcus! Welcome to the Tranchi AI deal list. You'll get texts when we have a property matching your buy box. Reply YES to any deal for details. Reply STOP to opt out anytime. -TranchiAI"
+"Hey Marcus! Welcome to the Hola AI deal list. You'll get texts when we have a property matching your buy box. Reply YES to any deal for details. Reply STOP to opt out anytime. -HolaAI"
 
 Opt-in Method:          Website form
 Opt-in Description:     "Subscribers submit a web form at [YOUR URL] that includes
                          explicit consent language: 'By submitting this form, you
                          expressly consent to receive recurring automated text messages
-                         from Tranchi AI at the mobile number provided.'"
+                         from Hola AI at the mobile number provided.'"
 
 ====================================
 STEP 3: AFTER APPROVAL (1-3 business days)

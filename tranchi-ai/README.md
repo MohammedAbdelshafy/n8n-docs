@@ -1,4 +1,4 @@
-# Tranchi AI — Government Auction Deal Engine
+# Hola AI — Government Auction Deal Engine
 
 Autonomous pipeline targeting $18K+/week from government-auctioned properties.
 Finds deals, underwrites with Claude AI, locates cash buyers, runs outreach sequences,

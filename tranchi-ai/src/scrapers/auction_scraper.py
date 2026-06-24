@@ -278,7 +278,7 @@ async def run_ingestion() -> dict:
     print("=" * 60)
 
     async with httpx.AsyncClient(headers={
-        "User-Agent": "Mozilla/5.0 (compatible; TranchiBot/1.0)"
+        "User-Agent": "Mozilla/5.0 (compatible; HolaBot/1.0)"
     }) as client:
 
         # Run all scrapers concurrently
