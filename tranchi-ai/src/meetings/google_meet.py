@@ -26,7 +26,7 @@ twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 GOOGLE_CREDENTIALS_FILE = "google_credentials.json"   # service account JSON
 CALENDAR_ID             = "primary"                    # or specific calendar ID
 YOUR_TIMEZONE           = "America/Chicago"            # adjust to your timezone
-YOUR_NAME               = "Tranchi AI Acquisitions"
+YOUR_NAME               = "Hola AI Acquisitions"
 YOUR_EMAIL              = "your@email.com"             # override in .env
 
 
@@ -104,7 +104,7 @@ def create_meet_event(
     event_body = {
         "summary": f"Deal Call — {property_address}",
         "description": (
-            f"Tranchi AI deal review call with {buyer_name}.\n\n"
+            f"Hola AI deal review call with {buyer_name}.\n\n"
             f"Property: {property_address}\n"
             f"Agenda: Review deal details, answer questions, confirm interest."
         ),

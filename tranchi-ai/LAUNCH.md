@@ -1,4 +1,4 @@
-# Tranchi AI — Launch Checklist
+# Hola AI — Launch Checklist
 
 Follow top to bottom. Total time: ~45 minutes.
 
@@ -24,7 +24,7 @@ Minimum required to go live:
 | `SUPABASE_KEY` | Supabase → service_role key (backend only) |
 | `ANTHROPIC_API_KEY` | https://console.anthropic.com |
 | `EMAIL_ADDRESS` | Your Gmail address |
-| `EMAIL_APP_PASSWORD` | Google Account → Security → 2-Step Verification → App Passwords → create one named "Tranchi" |
+| `EMAIL_APP_PASSWORD` | Google Account → Security → 2-Step Verification → App Passwords → create one named "Hola" |
 
 Optional (add later when you get a Twilio number):
 
@@ -42,7 +42,7 @@ The system runs on email-only until Twilio is configured. SMS fires automaticall
 
 Skip this on Day 1 if you want — the system flags interested buyers for manual callback.
 
-1. https://console.cloud.google.com → New Project → name it "Tranchi AI"
+1. https://console.cloud.google.com → New Project → name it "Hola AI"
 2. APIs & Services → Enable → search "Google Calendar API" → Enable
 3. IAM & Admin → Service Accounts → Create → name "tranchi-calendar"
 4. Click the account → Keys → Add Key → JSON → Download

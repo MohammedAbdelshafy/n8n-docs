@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tranchi AI — First-run setup validator
+# Hola AI — First-run setup validator
 # Run from tranchi-ai/ directory:  bash scripts/setup.sh
 set -e
 

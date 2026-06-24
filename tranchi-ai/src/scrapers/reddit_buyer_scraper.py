@@ -36,7 +36,7 @@ BUYER_SIGNALS = re.compile(
 PHONE_RE = re.compile(r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b')
 
 HEADERS = {
-    "User-Agent": "TranchiAI/1.0 (real estate lead aggregator; contact us at example@example.com)",
+    "User-Agent": "HolaAI/1.0 (real estate lead aggregator; contact us at example@example.com)",
     "Accept": "application/json",
 }
 

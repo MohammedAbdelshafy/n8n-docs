@@ -34,7 +34,7 @@ def deal_alert(
 
   <!-- Header -->
   <tr><td style="background:#141416;padding:28px 32px 0;">
-    <p style="margin:0 0 4px;font-size:11px;color:#888;letter-spacing:1.5px;text-transform:uppercase;">Tranchi AI Deal Alert</p>
+    <p style="margin:0 0 4px;font-size:11px;color:#888;letter-spacing:1.5px;text-transform:uppercase;">Hola AI Deal Alert</p>
     <span style="display:inline-block;background:rgba(212,168,71,0.15);border:1px solid rgba(212,168,71,0.4);color:#D4A847;font-size:12px;font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:100px;">{ai_grade} DEAL</span>
   </td></tr>
 
@@ -111,7 +111,7 @@ def deal_alert(
   <!-- Footer -->
   <tr><td style="border-top:1px solid #242428;padding:20px 32px;">
     <p style="margin:0;font-size:11px;color:#444;line-height:1.6;">
-      You're receiving this because you opted into the Tranchi AI deal list.
+      You're receiving this because you opted into the Hola AI deal list.
       To unsubscribe, reply with UNSUBSCRIBE in the subject line.
       Not a licensed broker. All properties sold AS-IS.
     </p>
@@ -129,7 +129,7 @@ def deal_alert(
 def opt_in_confirmation(buyer_name: str, states: list[str]) -> tuple[str, str]:
     first   = buyer_name.split()[0] if buyer_name else "Investor"
     states_str = ", ".join(states)
-    subject = "You're on the Tranchi AI deal list"
+    subject = "You're on the Hola AI deal list"
     html = f"""<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:32px 16px;background:#0a0a0b;font-family:Inter,Arial,sans-serif;">
@@ -193,7 +193,7 @@ def followup_email(
 <body style="margin:0;padding:32px 16px;background:#0a0a0b;font-family:Inter,Arial,sans-serif;">
 <table width="560" cellpadding="0" cellspacing="0" style="background:#141416;border:1px solid #242428;border-radius:16px;padding:36px;max-width:100%;margin:0 auto;">
 <tr><td>
-  <p style="margin:0 0 4px;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;">Tranchi AI — Follow Up</p>
+  <p style="margin:0 0 4px;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;">Hola AI — Follow Up</p>
   <h2 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#f0f0f0;">{address}, {city} {state}</h2>
   <p style="margin:0 0 24px;font-size:15px;color:#ccc;line-height:1.7;">{body_text}</p>
   <a href="mailto:{reply_email}?subject=YES — {address}&body=I'm interested. Please send details."

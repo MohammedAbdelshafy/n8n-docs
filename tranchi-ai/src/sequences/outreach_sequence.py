@@ -32,7 +32,7 @@ def build_day1_followup(buyer_name: str, address: str, city: str, arv: float, ma
         f"Hey {first}, following up on the {city} deal I sent yesterday. "
         f"ARV ${arv:,.0f}, asking ${mao:,.0f} AS-IS. "
         f"Auction's coming up fast — need to know if you're in. "
-        f"Reply YES for details or NO to pass. -TranchiAI"
+        f"Reply YES for details or NO to pass. -HolaAI"
     )
 
 
@@ -42,7 +42,7 @@ def build_day3_final(buyer_name: str, address: str, city: str, arv: float, mao: 
         f"{first} — last chance on {city}. "
         f"ARV ${arv:,.0f} / asking ${mao:,.0f}. "
         f"Auction {auction_date}. Closing my list today. "
-        f"YES to lock in, else moving to next buyer. -TranchiAI"
+        f"YES to lock in, else moving to next buyer. -HolaAI"
     )
 
 

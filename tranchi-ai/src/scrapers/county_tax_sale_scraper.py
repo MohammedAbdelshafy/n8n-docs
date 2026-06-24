@@ -1,9 +1,9 @@
 """
 County Tax Sale + Sheriff Sale scraper.
 
-These are the REAL Tranchi AI deal sources — direct from county websites.
+These are the REAL Hola AI deal sources — direct from county websites.
 Opening bids often start at $500–$15,000. ARV can be $60K–$150K.
-That's the $9K→$90K spread Tranchi AI is built on.
+That's the $9K→$90K spread Hola AI is built on.
 
 Auctions are public records. Most counties post upcoming sales online.
 

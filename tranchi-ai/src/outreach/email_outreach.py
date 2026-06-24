@@ -31,7 +31,7 @@ REPLY_TO_EMAIL    = os.getenv("REPLY_TO_EMAIL", EMAIL_ADDRESS)
 
 
 # ── Core send function ────────────────────────────────────────
-def send_email(to: str, subject: str, html: str, from_name: str = "Tranchi AI") -> bool:
+def send_email(to: str, subject: str, html: str, from_name: str = "Hola AI") -> bool:
     if not EMAIL_ADDRESS or not EMAIL_APP_PASSWORD:
         print(f"[EMAIL] Not configured — set EMAIL_ADDRESS + EMAIL_APP_PASSWORD in .env")
         return False

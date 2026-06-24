@@ -161,7 +161,7 @@ async def scrape_craigslist_buyers() -> list[dict]:
     leads = []
 
     async with httpx.AsyncClient(headers={
-        "User-Agent": "Mozilla/5.0 (compatible; TranchiBot/1.0)"
+        "User-Agent": "Mozilla/5.0 (compatible; HolaBot/1.0)"
     }) as client:
         for state, markets in state_craigslist.items():
             for market in markets[:2]:
