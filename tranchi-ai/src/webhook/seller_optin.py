@@ -7,7 +7,7 @@ Auto-scores motivation so you (or your buyers) work the hottest first.
 
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import Optional
 import re
 from config import SUPABASE_URL, SUPABASE_KEY
@@ -39,8 +39,9 @@ class SellerLead(BaseModel):
     consent_given:  bool
     consent_text:   Optional[str] = None
 
-    @validator("phone")
-    def clean_phone(cls, v):
+    @field_validator("phone")
+    @classmethod
+    def clean_phone(cls, v: str) -> str:
         d = re.sub(r"\D", "", v)
         if len(d) == 10:
             return f"+1{d}"
@@ -48,14 +49,16 @@ class SellerLead(BaseModel):
             return f"+{d}"
         raise ValueError("Valid 10-digit US phone required.")
 
-    @validator("email")
-    def clean_email(cls, v):
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, v: str) -> str:
         if "@" not in v:
             raise ValueError("Valid email required.")
         return v.lower().strip()
 
-    @validator("consent_given")
-    def must_consent(cls, v):
+    @field_validator("consent_given")
+    @classmethod
+    def must_consent(cls, v: bool) -> bool:
         if not v:
             raise ValueError("Consent is required to submit.")
         return v
