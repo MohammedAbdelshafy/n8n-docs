@@ -12,52 +12,74 @@ phone number's "A MESSAGE COMES IN" webhook to:
 """
 
 from fastapi import FastAPI, Form, Request, HTTPException
-from fastapi.responses import PlainTextResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import PlainTextResponse, FileResponse, JSONResponse
 import re
 import hashlib
 import hmac
 import base64
 import os
-from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_AUTH_TOKEN
-from src.meetings.google_meet import book_meeting_for_buyer
-from src.outreach.buyer_outreach import handle_opt_out
+
+app = FastAPI(title="Tranchi AI")
+
+# Lazy Supabase client — not created at import time so the process starts
+# even when env vars haven't propagated yet (e.g. first Railway boot).
+_supabase = None
+
+def get_supabase():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set")
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
+
+
+# Deferred imports so their module-level supabase clients don't crash boot
+def _get_google_meet():
+    from src.meetings.google_meet import book_meeting_for_buyer
+    return book_meeting_for_buyer
+
+def _get_handle_opt_out():
+    from src.outreach.buyer_outreach import handle_opt_out
+    return handle_opt_out
+
 from src.webhook.opt_in import router as opt_in_router
 from src.webhook.seller_optin import router as seller_router
-
-app      = FastAPI(title="Tranchi AI")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Mount the opt-in APIs (buyer + seller)
 app.include_router(opt_in_router)
 app.include_router(seller_router)
 
 # Serve the funnel HTML files
 FUNNEL_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "funnel")
 
+FUNNEL_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "funnel")
+
+def _funnel(filename: str):
+    path = os.path.join(FUNNEL_DIR, filename)
+    if os.path.exists(path):
+        return FileResponse(path)
+    return JSONResponse({"status": "ok", "service": "Tranchi AI"})
+
 @app.get("/")
 async def landing():
-    # Buyer funnel at root
-    return FileResponse(os.path.join(FUNNEL_DIR, "index.html"))
+    return _funnel("index.html")
 
 @app.get("/thank-you.html")
 async def thank_you():
-    return FileResponse(os.path.join(FUNNEL_DIR, "thank-you.html"))
+    return _funnel("thank-you.html")
 
 @app.get("/sell")
 async def seller_landing():
-    # Seller funnel ("get a cash offer")
-    return FileResponse(os.path.join(FUNNEL_DIR, "seller.html"))
+    return _funnel("seller.html")
 
 @app.get("/seller-thanks.html")
 async def seller_thanks():
-    return FileResponse(os.path.join(FUNNEL_DIR, "seller-thanks.html"))
+    return _funnel("seller-thanks.html")
 
 @app.get("/privacy")
 async def privacy():
-    # Required by Facebook Lead Ads + TCPA compliance
-    return FileResponse(os.path.join(FUNNEL_DIR, "privacy.html"))
+    return _funnel("privacy.html")
 
 YES_PATTERNS  = re.compile(r"\b(yes|yeah|yep|interested|in|send|tell me more|details|absolutely|sure|let'?s go)\b", re.I)
 NO_PATTERNS   = re.compile(r"\b(no|nope|pass|not interested|remove|don'?t|stop texting)\b", re.I)
@@ -82,7 +104,8 @@ def validate_twilio_signature(request_url: str, params: dict, signature: str) ->
 # ============================================================
 def find_active_outreach(buyer_phone: str) -> tuple[str | None, str | None]:
     """Return (buyer_id, property_id) for the most recent SENT outreach to this number."""
-    buyer_res = supabase.table("cash_buyers") \
+    sb = get_supabase()
+    buyer_res = sb.table("cash_buyers") \
         .select("id") \
         .eq("phone", buyer_phone) \
         .single() \
@@ -93,7 +116,7 @@ def find_active_outreach(buyer_phone: str) -> tuple[str | None, str | None]:
 
     buyer_id = buyer_res.data["id"]
 
-    log_res = supabase.table("outreach_log") \
+    log_res = sb.table("outreach_log") \
         .select("property_id") \
         .eq("buyer_id", buyer_id) \
         .eq("status", "SENT") \
@@ -129,24 +152,23 @@ async def inbound_sms(
     print(f"[INBOUND] {phone}: {message}")
 
     # Hard stop — permanent opt-out
+    sb = get_supabase()
+
     if STOP_PATTERNS.match(message):
-        handle_opt_out(phone)
-        supabase.table("outreach_log") \
+        _get_handle_opt_out()(phone)
+        sb.table("outreach_log") \
             .update({"status": "OPTED_OUT", "reply_text": message}) \
             .eq("status", "SENT") \
             .execute()
-        # Twilio auto-handles STOP — no reply needed
         return ""
 
     buyer_id, property_id = find_active_outreach(phone)
 
     if not buyer_id:
-        # Unknown number — log and ignore
         print(f"[INBOUND] Unknown number: {phone}")
         return ""
 
-    # Update reply in outreach log
-    supabase.table("outreach_log").insert({
+    sb.table("outreach_log").insert({
         "buyer_id":    buyer_id,
         "property_id": property_id,
         "channel":     "SMS",
@@ -155,8 +177,7 @@ async def inbound_sms(
         "reply_text":  message,
     }).execute()
 
-    # Mark previous SENT record as replied
-    supabase.table("outreach_log") \
+    sb.table("outreach_log") \
         .update({"status": "REPLIED", "reply_text": message}) \
         .eq("buyer_id", buyer_id) \
         .eq("property_id", property_id) \
@@ -164,21 +185,18 @@ async def inbound_sms(
         .execute()
 
     if YES_PATTERNS.search(message):
-        # Book the meeting automatically
         try:
-            result = book_meeting_for_buyer(buyer_id, property_id)
+            result = _get_google_meet()(buyer_id, property_id)
             print(f"[MEET BOOKED] {result.get('meet_link')}")
         except Exception as e:
             print(f"[MEET ERROR] {e}")
-            # Fallback — flag for manual callback
-            supabase.table("cash_buyers") \
+            sb.table("cash_buyers") \
                 .update({"status": "ACTIVE"}) \
                 .eq("id", buyer_id) \
                 .execute()
 
     elif NO_PATTERNS.search(message):
-        # Mark cold — don't contact about this property again
-        supabase.table("outreach_log") \
+        sb.table("outreach_log") \
             .update({"status": "REJECTED"}) \
             .eq("buyer_id", buyer_id) \
             .eq("property_id", property_id) \
