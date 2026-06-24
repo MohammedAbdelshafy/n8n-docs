@@ -9,5 +9,7 @@ google-api-python-client>=2.150.0
 pytz>=2024.1
 python-multipart>=0.0.12
 
-# Free scraping stack
+# Free scraping stack (Firecrawl replacement — no API key needed)
 playwright>=1.49.0
+crawl4ai[sync]>=0.9.0
+trafilatura>=2.0.0
