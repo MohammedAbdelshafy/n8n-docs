@@ -10,11 +10,22 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, validator
 from typing import Optional
 import re
-from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-router   = APIRouter()
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+router = APIRouter()
+
+# Lazy client — created on first request, not at import time, so the app
+# boots even before env vars are present (Railway first deploy).
+_supabase = None
+
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            raise HTTPException(status_code=503, detail="Database not configured")
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 
 
 class SellerLead(BaseModel):
@@ -83,7 +94,7 @@ def parse_location(address: str) -> dict:
 @router.post("/api/seller-lead")
 async def seller_lead(req: SellerLead, request: Request):
     # Dedup by phone
-    existing = supabase.table("seller_leads") \
+    existing = _sb().table("seller_leads") \
         .select("id") \
         .eq("phone", req.phone) \
         .execute()
@@ -115,7 +126,7 @@ async def seller_lead(req: SellerLead, request: Request):
         "status":            "NEW",
     }
 
-    supabase.table("seller_leads").insert(row).execute()
+    _sb().table("seller_leads").insert(row).execute()
 
     # Email confirmation to the seller
     try:

@@ -12,11 +12,22 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, validator
 from typing import Optional
 import re
-from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-router   = APIRouter()
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+router = APIRouter()
+
+# Lazy client — created on first request, not at import time, so the app
+# boots even before env vars are present (Railway first deploy).
+_supabase = None
+
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            raise HTTPException(status_code=503, detail="Database not configured")
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 
 
 # ── Input schema ──────────────────────────────────────────────
@@ -55,7 +66,7 @@ class OptInRequest(BaseModel):
 @router.post("/api/opt-in")
 async def opt_in(req: OptInRequest):
     # Dedup — already on list?
-    existing = supabase.table("cash_buyers") \
+    existing = _sb().table("cash_buyers") \
         .select("id, opt_out") \
         .eq("phone", req.phone) \
         .execute()
@@ -73,7 +84,7 @@ async def opt_in(req: OptInRequest):
     # Save new buyer
     now = datetime.now(timezone.utc).isoformat()
 
-    supabase.table("cash_buyers").insert({
+    _sb().table("cash_buyers").insert({
         "name":                     req.name,
         "company":                  req.company or "",
         "phone":                    req.phone,
