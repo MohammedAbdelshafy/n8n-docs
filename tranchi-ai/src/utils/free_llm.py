@@ -20,6 +20,7 @@ Uses httpx directly — no extra packages needed.
 
 import os
 import re
+import time
 import httpx
 
 # ── Provider config ────────────────────────────────────────────────────────────
@@ -144,43 +145,55 @@ def which_provider() -> str:
     return "NONE — set GROQ_API_KEY, GLM_API_KEY, or GEMINI_API_KEY"
 
 
-def call_llm(system: str, user: str, max_tokens: int = 2048) -> str:
+# Provider table — (name, key, callable). Tried top-to-bottom; free first.
+def _providers():
+    return [
+        ("Groq",      GROQ_KEY,      _groq),
+        ("GLM-5.2",   GLM_KEY,       _glm),
+        ("Gemini",    GEMINI_KEY,    _gemini),
+        ("Anthropic", ANTHROPIC_KEY, _anthropic),
+    ]
+
+
+def _is_retryable(e: Exception) -> bool:
+    """Retry only transient failures: rate limits (429), server errors (5xx),
+    and network/timeout errors. Auth/4xx errors fall straight through to the
+    next provider — retrying them just wastes time."""
+    if isinstance(e, httpx.HTTPStatusError):
+        code = e.response.status_code
+        return code == 429 or code >= 500
+    return isinstance(e, (httpx.TimeoutException, httpx.NetworkError))
+
+
+def call_llm(system: str, user: str, max_tokens: int = 2048, retries: int = 2) -> str:
     """
     Call the best available LLM. Returns raw text (JSON string for structured tasks).
     Priority: Groq → GLM-5.2 → Gemini → Anthropic (paid fallback).
+
+    Each provider gets up to `retries` extra attempts with exponential backoff
+    on transient errors (429 / 5xx / network) before falling through to the next.
     """
     attempts = []
 
-    if GROQ_KEY:
-        try:
-            return _clean_json(_groq(system, user, max_tokens))
-        except Exception as e:
-            attempts.append(f"Groq: {e}")
-
-    if GLM_KEY:
-        try:
-            return _clean_json(_glm(system, user, max_tokens))
-        except Exception as e:
-            attempts.append(f"GLM: {e}")
-
-    if GEMINI_KEY:
-        try:
-            return _clean_json(_gemini(system, user, max_tokens))
-        except Exception as e:
-            attempts.append(f"Gemini: {e}")
-
-    if ANTHROPIC_KEY:
-        try:
-            return _clean_json(_anthropic(system, user, max_tokens))
-        except Exception as e:
-            attempts.append(f"Anthropic: {e}")
+    for name, key, fn in _providers():
+        if not key:
+            continue
+        for attempt in range(retries + 1):
+            try:
+                return _clean_json(fn(system, user, max_tokens))
+            except Exception as e:
+                attempts.append(f"{name} (try {attempt + 1}): {e}")
+                if attempt < retries and _is_retryable(e):
+                    time.sleep(2 ** attempt)   # 1s, 2s backoff
+                    continue
+                break   # non-retryable or out of retries → next provider
 
     raise RuntimeError(
-        "No LLM key set. Add ONE of these to your .env (all FREE):\n"
+        "All LLM providers failed (or no key set). Add ONE to your .env (all FREE):\n"
         "  GROQ_API_KEY   → console.groq.com (no card, 14,400 req/day)\n"
         "  GLM_API_KEY    → z.ai (no card, 1M context, GLM-5.2)\n"
         "  GEMINI_API_KEY → aistudio.google.com/app/apikey (no card)\n"
-        f"Errors: {' | '.join(attempts)}"
+        f"Errors: {' | '.join(attempts) if attempts else 'no providers configured'}"
     )
 
 
