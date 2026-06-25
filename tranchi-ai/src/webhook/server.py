@@ -215,6 +215,19 @@ async def health():
     return {"status": "ok", "service": "Hola AI SMS Webhook"}
 
 
+# ── Manual pipeline trigger (/run-now?secret=RUN_SECRET) ──────
+import subprocess, sys as _sys
+
+@app.get("/run-now")
+async def run_now(secret: str = ""):
+    run_secret = os.getenv("RUN_SECRET", "")
+    if not run_secret or secret != run_secret:
+        return JSONResponse({"error": "invalid secret"}, status_code=403)
+    app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    subprocess.Popen([_sys.executable, "main.py", "all"], cwd=app_dir)
+    return {"status": "pipeline started — check Railway deploy logs"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("src.webhook.server:app", host="0.0.0.0", port=8000, reload=True)
