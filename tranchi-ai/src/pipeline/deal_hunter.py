@@ -15,12 +15,17 @@ from datetime import date
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
-
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 def deal_dashboard() -> list[dict]:
     """Print all APPROVED deals ranked by estimated profit."""
-    deals = supabase.table("auction_properties") \
+    deals = _sb().table("auction_properties") \
         .select("*") \
         .eq("ai_status", "APPROVED") \
         .order("estimated_arv", desc=True) \

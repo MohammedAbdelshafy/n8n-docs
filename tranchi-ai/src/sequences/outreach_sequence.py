@@ -16,7 +16,14 @@ from supabase import create_client
 from twilio.rest import Client as TwilioClient
 from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
+
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) if TWILIO_ACCOUNT_SID else None
 
 QUIET_HOUR_START = 9
@@ -62,7 +69,7 @@ def send_followup(to: str, message: str, buyer_id: str, property_id: str, sequen
 
     try:
         twilio.messages.create(body=message, from_=TWILIO_FROM_NUMBER, to=to)
-        supabase.table("outreach_log").insert({
+        _sb().table("outreach_log").insert({
             "buyer_id":    buyer_id,
             "property_id": property_id,
             "channel":     "SMS",
@@ -88,7 +95,7 @@ def run_sequences() -> dict:
     sent_d3   = 0
 
     # Find all SENT outreach (EMAIL or SMS) where status is still SENT (no reply)
-    logs = supabase.table("outreach_log") \
+    logs = _sb().table("outreach_log") \
         .select("*, cash_buyers(name, phone, email, opt_out), auction_properties(address, city, state, estimated_arv, mao, auction_date)") \
         .eq("status", "SENT") \
         .in_("channel", ["EMAIL", "SMS"]) \
@@ -117,7 +124,7 @@ def run_sequences() -> dict:
         auction_dt  = prop.get("auction_date") or "TBD"
 
         # Check if already received a follow-up today
-        already = supabase.table("outreach_log") \
+        already = _sb().table("outreach_log") \
             .select("id") \
             .eq("buyer_id", buyer_id) \
             .eq("property_id", property_id) \
@@ -132,8 +139,8 @@ def run_sequences() -> dict:
             sent = False
             if email:
                 from src.outreach.email_outreach import send_followup_email
-                full_prop = supabase.table("auction_properties").select("*").eq("id", property_id).single().execute().data or {}
-                full_buyer = supabase.table("cash_buyers").select("*").eq("id", buyer_id).single().execute().data or {}
+                full_prop = _sb().table("auction_properties").select("*").eq("id", property_id).single().execute().data or {}
+                full_buyer = _sb().table("cash_buyers").select("*").eq("id", buyer_id).single().execute().data or {}
                 sent = send_followup_email(full_buyer, full_prop, day=1)
             if not sent and phone:
                 msg = build_day1_followup(name, address, city, arv, mao)
@@ -146,8 +153,8 @@ def run_sequences() -> dict:
             sent = False
             if email:
                 from src.outreach.email_outreach import send_followup_email
-                full_prop = supabase.table("auction_properties").select("*").eq("id", property_id).single().execute().data or {}
-                full_buyer = supabase.table("cash_buyers").select("*").eq("id", buyer_id).single().execute().data or {}
+                full_prop = _sb().table("auction_properties").select("*").eq("id", property_id).single().execute().data or {}
+                full_buyer = _sb().table("cash_buyers").select("*").eq("id", buyer_id).single().execute().data or {}
                 sent = send_followup_email(full_buyer, full_prop, day=3)
             if not sent and phone:
                 msg = build_day3_final(name, address, city, arv, mao, str(auction_dt))
@@ -158,7 +165,7 @@ def run_sequences() -> dict:
 
         elif days_ago > 4:
             # No response after 4 days — mark cold
-            supabase.table("outreach_log") \
+            _sb().table("outreach_log") \
                 .update({"status": "NO_RESPONSE"}) \
                 .eq("id", entry["id"]) \
                 .execute()

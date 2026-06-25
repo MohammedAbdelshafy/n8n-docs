@@ -16,8 +16,14 @@ from supabase import create_client
 from src.utils.free_llm import call_llm
 from config import SUPABASE_URL, SUPABASE_KEY, EMAIL_ADDRESS
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 AUTO_SEND = os.getenv("EMAIL_AUTO_SEND", "false").lower() == "true"
 MAX_PER_RUN = int(os.getenv("FSBO_OUTREACH_LIMIT", "20"))
 
@@ -95,7 +101,7 @@ def run_fsbo_outreach(auto_send: bool = AUTO_SEND) -> dict:
     Draft (and optionally send) outreach emails to FSBO prospects.
     Returns counts of drafted/sent/skipped.
     """
-    leads = supabase.table("seller_leads") \
+    leads = _sb().table("seller_leads") \
         .select("*") \
         .in_("source", ["ZILLOW_FSBO", "ZILLOW_EXPORT", "CRAIGSLIST_FSBO"]) \
         .eq("consent_given", False) \
@@ -136,7 +142,7 @@ def run_fsbo_outreach(auto_send: bool = AUTO_SEND) -> dict:
             if ok:
                 sent += 1
                 # Mark outreach attempted
-                supabase.table("seller_leads") \
+                _sb().table("seller_leads") \
                     .update({"status": "OUTREACH_SENT"}) \
                     .eq("id", lead["id"]) \
                     .execute()
@@ -170,7 +176,7 @@ def mark_responded(lead_id: str, email: str = None, phone: str = None):
         updates["email"] = email
     if phone:
         updates["phone"] = phone
-    supabase.table("seller_leads").update(updates).eq("id", lead_id).execute()
+    _sb().table("seller_leads").update(updates).eq("id", lead_id).execute()
     print(f"[RESPONDED] Lead {lead_id} is now consent_given=TRUE — sellable.")
 
 

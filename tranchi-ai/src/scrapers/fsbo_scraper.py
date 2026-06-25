@@ -21,8 +21,14 @@ from playwright.async_api import async_playwright
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 # Zillow FSBO search by state + major city
 FSBO_CITIES = {
     "TX": ["Houston", "Dallas", "San-Antonio", "Austin", "Fort-Worth"],
@@ -129,7 +135,7 @@ async def run_fsbo_scraper(states: list[str] = None) -> int:
                         continue
 
                     # Dedup by address
-                    existing = supabase.table("seller_leads") \
+                    existing = _sb().table("seller_leads") \
                         .select("id") \
                         .eq("property_address", addr) \
                         .execute()
@@ -158,7 +164,7 @@ async def run_fsbo_scraper(states: list[str] = None) -> int:
                         ),
                     }
                     try:
-                        supabase.table("seller_leads").insert(row).execute()
+                        _sb().table("seller_leads").insert(row).execute()
                         new_leads += 1
                         flag = " ← MOTIVATED" if listing.get("motivated") else ""
                         print(f"  + {addr}{flag}")

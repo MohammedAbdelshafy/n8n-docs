@@ -17,8 +17,14 @@ import httpx
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 SUBREDDITS = [
     "WholesaleRealEstate",
     "realestateinvesting",
@@ -112,7 +118,7 @@ async def scrape_reddit_buyers() -> int:
                     states = _extract_states(full.upper()) or TARGET_STATES[:2]
 
                     # Dedup by Reddit username in notes
-                    existing = supabase.table("cash_buyers") \
+                    existing = _sb().table("cash_buyers") \
                         .select("id") \
                         .like("notes", f"%reddit.com/u/{author}%") \
                         .execute()
@@ -134,7 +140,7 @@ async def scrape_reddit_buyers() -> int:
                         ),
                     }
                     try:
-                        supabase.table("cash_buyers").insert(row).execute()
+                        _sb().table("cash_buyers").insert(row).execute()
                         new += 1
                         seen_users.add(author)
                         print(f"  [REDDIT] u/{author} ({sub}) — {', '.join(states)}")

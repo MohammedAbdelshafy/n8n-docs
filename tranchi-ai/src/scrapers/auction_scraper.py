@@ -15,9 +15,14 @@ from config import (
     TARGET_STATES, AUCTION_SOURCES
 )
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
-
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 # ============================================================
 # HUD HOMES  (hudhomestore.gov has a JSON API)
 # ============================================================
@@ -253,7 +258,7 @@ def save_properties(properties: list[dict]) -> int:
     saved = 0
     for prop in properties:
         # Deduplicate by address + source
-        existing = supabase.table("auction_properties") \
+        existing = _sb().table("auction_properties") \
             .select("id") \
             .eq("address", prop["address"]) \
             .eq("source", prop["source"]) \
@@ -262,7 +267,7 @@ def save_properties(properties: list[dict]) -> int:
         if existing.data:
             continue  # already in DB
 
-        result = supabase.table("auction_properties").insert(prop).execute()
+        result = _sb().table("auction_properties").insert(prop).execute()
         if result.data:
             saved += 1
 

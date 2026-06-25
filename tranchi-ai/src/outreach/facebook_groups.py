@@ -18,8 +18,14 @@ from datetime import datetime, timezone, date
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 # ── TOP FACEBOOK GROUPS PER STATE ─────────────────────────────────────────────
 # Groups with 10k+ members. Search these names in Facebook to find them.
 # Join before posting — most are open to investors.
@@ -211,7 +217,7 @@ DM "COLLAB {state}" to get started 👇
 def log_group_post(group_name: str, post_type: str, state: str, notes: str = ""):
     """Record that you posted in a group. Prevents double-posting."""
     try:
-        supabase.table("fb_group_posts").insert({
+        _sb().table("fb_group_posts").insert({
             "group_name": group_name,
             "post_type":  post_type,
             "state":      state,
@@ -227,7 +233,7 @@ def log_group_post(group_name: str, post_type: str, state: str, notes: str = "")
 def get_post_history(days: int = 7) -> list[dict]:
     """Show what's been posted in the last N days."""
     try:
-        rows = supabase.table("fb_group_posts") \
+        rows = _sb().table("fb_group_posts") \
             .select("*") \
             .order("posted_at", desc=True) \
             .limit(100) \

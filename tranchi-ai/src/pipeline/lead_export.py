@@ -10,9 +10,14 @@ from datetime import date
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
-
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 def export_seller_leads(
     state: str = None,
     min_score: int = 0,
@@ -20,7 +25,7 @@ def export_seller_leads(
     out_path: str = None,
 ) -> str:
     """Export opt-in seller leads to CSV. Returns the file path."""
-    q = supabase.table("seller_leads") \
+    q = _sb().table("seller_leads") \
         .select("*") \
         .eq("consent_given", True) \
         .eq("opt_out", False) \
@@ -58,7 +63,7 @@ def export_seller_leads(
 
 def export_summary() -> dict:
     """Quick stats on your sellable lead inventory."""
-    all_leads = supabase.table("seller_leads") \
+    all_leads = _sb().table("seller_leads") \
         .select("state, lead_score, status, consent_given") \
         .eq("consent_given", True) \
         .eq("opt_out", False) \

@@ -25,8 +25,14 @@ from supabase import create_client
 
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 LOOKBACK_DAYS = 14   # pull last 2 weeks of filings
 
 # ── County portal configs ──────────────────────────────────────────────────────
@@ -269,7 +275,7 @@ def _save_leads(raw_leads: list[dict]) -> int:
 
         # Dedupe by seller name + source
         existing = (
-            supabase.table("seller_leads")
+            _sb().table("seller_leads")
             .select("id")
             .eq("full_name", record["full_name"])
             .eq("source", "LIS_PENDENS")
@@ -280,7 +286,7 @@ def _save_leads(raw_leads: list[dict]) -> int:
             continue
 
         try:
-            result = supabase.table("seller_leads").insert(record).execute()
+            result = _sb().table("seller_leads").insert(record).execute()
             if result.data:
                 saved += 1
         except Exception as e:

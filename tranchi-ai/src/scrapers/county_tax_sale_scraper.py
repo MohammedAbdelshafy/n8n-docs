@@ -27,8 +27,14 @@ from supabase import create_client
 from src.utils.free_llm import call_llm
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
@@ -159,7 +165,7 @@ def _save(properties: list[dict]) -> int:
         addr = p.get("address", "").strip()
         if not addr or not p.get("opening_bid"):
             continue
-        existing = supabase.table("auction_properties") \
+        existing = _sb().table("auction_properties") \
             .select("id") \
             .eq("address", addr) \
             .eq("source", p["source"]) \
@@ -167,7 +173,7 @@ def _save(properties: list[dict]) -> int:
         if existing.data:
             continue
         try:
-            supabase.table("auction_properties").insert(p).execute()
+            _sb().table("auction_properties").insert(p).execute()
             saved += 1
         except Exception as e:
             print(f"  [SAVE] {addr}: {e}")

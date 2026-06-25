@@ -21,8 +21,14 @@ from src.outreach.email_templates import (
     deal_alert, opt_in_confirmation, followup_email, meeting_confirmed
 )
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 EMAIL_ADDRESS     = os.getenv("EMAIL_ADDRESS", "")
 EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD", "")
 EMAIL_SMTP_HOST   = os.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com")
@@ -81,7 +87,7 @@ def send_deal_email(buyer: dict, prop: dict) -> bool:
     sent = send_email(email, subject, html)
 
     if sent:
-        supabase.table("outreach_log").insert({
+        _sb().table("outreach_log").insert({
             "buyer_id":    buyer["id"],
             "property_id": prop["id"],
             "channel":     "EMAIL",
@@ -119,7 +125,7 @@ def send_followup_email(buyer: dict, prop: dict, day: int) -> bool:
     sent = send_email(email, subject, html)
 
     if sent:
-        supabase.table("outreach_log").insert({
+        _sb().table("outreach_log").insert({
             "buyer_id":    buyer["id"],
             "property_id": prop["id"],
             "channel":     "EMAIL",
@@ -154,7 +160,7 @@ def run_email_outreach() -> dict:
     print(f"TRANCHI AI — Email Outreach | {date.today()}")
     print("=" * 60)
 
-    props = supabase.table("auction_properties") \
+    props = _sb().table("auction_properties") \
         .select("*") \
         .eq("ai_status", "APPROVE") \
         .eq("status", "APPROVED") \
@@ -168,7 +174,7 @@ def run_email_outreach() -> dict:
     for prop in properties:
         prop_id = prop["id"]
 
-        buyers = supabase.table("cash_buyers") \
+        buyers = _sb().table("cash_buyers") \
             .select("*") \
             .eq("opt_in", True) \
             .eq("opt_out", False) \
@@ -187,7 +193,7 @@ def run_email_outreach() -> dict:
                 continue
 
             # Already contacted?
-            already = supabase.table("outreach_log") \
+            already = _sb().table("outreach_log") \
                 .select("id") \
                 .eq("buyer_id", buyer["id"]) \
                 .eq("property_id", prop_id) \
@@ -202,7 +208,7 @@ def run_email_outreach() -> dict:
                 print(f"  EMAIL → {buyer.get('name')} ({buyer.get('email')})")
 
         if sent_this_deal > 0:
-            supabase.table("auction_properties") \
+            _sb().table("auction_properties") \
                 .update({"status": "BIDDING"}) \
                 .eq("id", prop_id) \
                 .execute()

@@ -18,11 +18,16 @@ import asyncio
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
-
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 def buyer_count() -> int:
-    r = supabase.table("cash_buyers").select("id", count="exact").eq("opt_in", True).execute()
+    r = _sb().table("cash_buyers").select("id", count="exact").eq("opt_in", True).execute()
     return r.count or 0
 
 

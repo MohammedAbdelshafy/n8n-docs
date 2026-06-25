@@ -4,6 +4,7 @@ gets back a structured investment decision, and updates Supabase.
 """
 
 import json
+import os
 import asyncio
 from datetime import date
 from supabase import create_client
@@ -14,10 +15,17 @@ from config import (
     REPAIR_RATE, CONDITION_MULTIPLIER, MIN_NET_PROFIT
 )
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
-# Load the system prompt once
-with open("prompts/underwriter_system_prompt.txt") as f:
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
+
+_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "prompts", "underwriter_system_prompt.txt")
+with open(_PROMPT_PATH) as f:
     SYSTEM_PROMPT = f.read()
 
 
@@ -114,7 +122,7 @@ def save_decision(property_id: str, decision: dict) -> None:
         "status": "APPROVED" if decision.get("status") == "APPROVE" else "NEW",
     }
 
-    supabase.table("auction_properties") \
+    _sb().table("auction_properties") \
         .update(update) \
         .eq("id", property_id) \
         .execute()
@@ -129,7 +137,7 @@ def run_underwriting() -> dict:
     print("=" * 60)
 
     # Pull all PENDING properties
-    result = supabase.table("auction_properties") \
+    result = _sb().table("auction_properties") \
         .select("*") \
         .eq("ai_status", "PENDING") \
         .execute()
@@ -166,7 +174,7 @@ def run_underwriting() -> dict:
         except json.JSONDecodeError as e:
             errors += 1
             print(f"JSON PARSE ERROR: {e}")
-            supabase.table("auction_properties") \
+            _sb().table("auction_properties") \
                 .update({"ai_status": "REVIEW", "ai_notes": f"Parse error: {e}"}) \
                 .eq("id", prop_id) \
                 .execute()

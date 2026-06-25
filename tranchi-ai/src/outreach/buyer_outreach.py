@@ -12,7 +12,14 @@ from config import (
     TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
 )
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
+
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) if TWILIO_ACCOUNT_SID else None
 
 # Quiet hours: no texts before 9am or after 8pm local time
@@ -28,7 +35,7 @@ def find_matching_buyers(prop: dict) -> list[dict]:
     arv       = prop.get("estimated_arv", 0)
     prop_type = prop.get("property_type", "SFR")
 
-    result = supabase.table("cash_buyers") \
+    result = _sb().table("cash_buyers") \
         .select("*") \
         .eq("opt_in", True) \
         .eq("opt_out", False) \
@@ -86,7 +93,7 @@ def send_sms(to_number: str, message: str, buyer_id: str, property_id: str) -> d
         )
 
         # Log the outreach
-        supabase.table("outreach_log").insert({
+        _sb().table("outreach_log").insert({
             "buyer_id":    buyer_id,
             "property_id": property_id,
             "channel":     "SMS",
@@ -97,7 +104,7 @@ def send_sms(to_number: str, message: str, buyer_id: str, property_id: str) -> d
         return {"status": "SENT", "sid": msg.sid}
 
     except Exception as e:
-        supabase.table("outreach_log").insert({
+        _sb().table("outreach_log").insert({
             "buyer_id":    buyer_id,
             "property_id": property_id,
             "channel":     "SMS",
@@ -111,7 +118,7 @@ def send_sms(to_number: str, message: str, buyer_id: str, property_id: str) -> d
 # HANDLE INBOUND STOP / OPT-OUT  (call from Twilio webhook)
 # ============================================================
 def handle_opt_out(phone: str) -> None:
-    supabase.table("cash_buyers") \
+    _sb().table("cash_buyers") \
         .update({"opt_out": True, "status": "BLACKLISTED"}) \
         .eq("phone", phone) \
         .execute()
@@ -127,7 +134,7 @@ def run_outreach() -> dict:
     print("=" * 60)
 
     # Get properties that are approved but haven't been sent yet
-    result = supabase.table("auction_properties") \
+    result = _sb().table("auction_properties") \
         .select("*") \
         .eq("ai_status", "APPROVE") \
         .eq("status", "APPROVED") \
@@ -165,7 +172,7 @@ def run_outreach() -> dict:
                 break
 
             # Check if already contacted about this property
-            already_sent = supabase.table("outreach_log") \
+            already_sent = _sb().table("outreach_log") \
                 .select("id") \
                 .eq("buyer_id", buyer_id) \
                 .eq("property_id", prop_id) \
@@ -186,7 +193,7 @@ def run_outreach() -> dict:
 
         # Mark as outreach initiated
         if sent_to_this_deal > 0:
-            supabase.table("auction_properties") \
+            _sb().table("auction_properties") \
                 .update({"status": "BIDDING"}) \
                 .eq("id", prop_id) \
                 .execute()

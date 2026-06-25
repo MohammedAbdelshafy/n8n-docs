@@ -15,8 +15,14 @@ from typing import Optional
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 with open(os.path.join(os.path.dirname(__file__), "scraper_configs.json")) as f:
     CONFIG = json.load(f)
 
@@ -157,7 +163,7 @@ def save_properties(properties: list[dict]) -> int:
         if not addr:
             continue
 
-        existing = supabase.table("auction_properties") \
+        existing = _sb().table("auction_properties") \
             .select("id") \
             .eq("address", addr) \
             .eq("source", source) \
@@ -166,7 +172,7 @@ def save_properties(properties: list[dict]) -> int:
         if existing.data:
             continue
 
-        supabase.table("auction_properties").insert(prop).execute()
+        _sb().table("auction_properties").insert(prop).execute()
         saved += 1
 
     return saved

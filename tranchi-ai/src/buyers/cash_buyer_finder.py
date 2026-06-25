@@ -17,8 +17,14 @@ from typing import Optional
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, APIFY_API_TOKEN, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 # Cities to target per state — highest investor density
 TARGET_CITIES = {
     "TX": ["Houston", "Dallas", "San Antonio", "Fort Worth", "Austin"],
@@ -297,7 +303,7 @@ def save_buyers(buyers: list[dict]) -> int:
         if not phone:
             continue
 
-        existing = supabase.table("cash_buyers") \
+        existing = _sb().table("cash_buyers") \
             .select("id") \
             .eq("phone", phone) \
             .execute()
@@ -305,7 +311,7 @@ def save_buyers(buyers: list[dict]) -> int:
         if existing.data:
             continue
 
-        supabase.table("cash_buyers").insert(buyer).execute()
+        _sb().table("cash_buyers").insert(buyer).execute()
         saved += 1
 
     return saved

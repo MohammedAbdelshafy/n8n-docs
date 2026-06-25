@@ -19,14 +19,20 @@ from datetime import date
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 LEAD_PRICE = 75   # your default ask per lead ($50 bulk, $100 hot)
 
 
 def get_sellable_inventory() -> dict:
     """Fetch all sellable (consent_given=TRUE) leads, grouped by state."""
-    leads = supabase.table("seller_leads") \
+    leads = _sb().table("seller_leads") \
         .select("state, lead_score, timeline, status, city") \
         .eq("consent_given", True) \
         .eq("opt_out", False) \
@@ -153,7 +159,7 @@ DM me or reply here if you want to see a sample (redacted PII) before buying."""
 
 def mark_lead_sold(lead_id: str):
     """Mark a lead as SOLD after you've transferred it to the buyer."""
-    supabase.table("seller_leads").update({"status": "SOLD"}).eq("id", lead_id).execute()
+    _sb().table("seller_leads").update({"status": "SOLD"}).eq("id", lead_id).execute()
     print(f"[MARKETPLACE] Lead {lead_id} marked SOLD.")
 
 

@@ -9,8 +9,14 @@ from datetime import date, timedelta
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 TARGET_DEALS_PER_DAY   = 2
 TARGET_WEEKLY_REVENUE  = 18_000
 
@@ -23,26 +29,26 @@ def get_daily_summary() -> dict:
     week_ago = (date.today() - timedelta(days=7)).isoformat()
 
     # Today's ingestion
-    new_props = supabase.table("auction_properties") \
+    new_props = _sb().table("auction_properties") \
         .select("id", count="exact") \
         .gte("created_at", today) \
         .execute()
 
     # Approved today
-    approved = supabase.table("auction_properties") \
+    approved = _sb().table("auction_properties") \
         .select("id, address, city, state, ai_grade, estimated_arv, mao, sms_draft", count="exact") \
         .eq("ai_status", "APPROVE") \
         .gte("created_at", today) \
         .execute()
 
     # Active deals
-    active_deals = supabase.table("active_deals") \
+    active_deals = _sb().table("active_deals") \
         .select("*") \
         .eq("status", "OPEN") \
         .execute()
 
     # Closed this week
-    closed_week = supabase.table("closed_deals") \
+    closed_week = _sb().table("closed_deals") \
         .select("net_profit") \
         .gte("closed_at", week_ago) \
         .execute()
@@ -51,7 +57,7 @@ def get_daily_summary() -> dict:
     deals_closed   = len(closed_week.data or [])
 
     # Best current opportunity
-    hot = supabase.table("auction_properties") \
+    hot = _sb().table("auction_properties") \
         .select("address, city, state, ai_grade, estimated_arv, mao, opening_bid, sms_draft") \
         .eq("ai_status", "APPROVE") \
         .eq("status", "APPROVED") \
@@ -78,7 +84,7 @@ def get_daily_summary() -> dict:
 # CLOSE A DEAL  (call when you've assigned/sold to a buyer)
 # ============================================================
 def close_deal(deal_id: str, sale_price: float, assignment_fee: float) -> dict:
-    deal = supabase.table("active_deals") \
+    deal = _sb().table("active_deals") \
         .select("*, auction_properties(address, source)") \
         .eq("id", deal_id) \
         .single() \
@@ -97,7 +103,7 @@ def close_deal(deal_id: str, sale_price: float, assignment_fee: float) -> dict:
     net      = assignment_fee - title - holding - misc
 
     # Update active deal
-    supabase.table("active_deals") \
+    _sb().table("active_deals") \
         .update({
             "sale_price":       sale_price,
             "assignment_fee":   assignment_fee,
@@ -108,7 +114,7 @@ def close_deal(deal_id: str, sale_price: float, assignment_fee: float) -> dict:
         .execute()
 
     # Archive to closed_deals
-    supabase.table("closed_deals").insert({
+    _sb().table("closed_deals").insert({
         "deal_id":          deal_id,
         "property_address": prop.get("address"),
         "purchase_price":   purchase,
@@ -119,7 +125,7 @@ def close_deal(deal_id: str, sale_price: float, assignment_fee: float) -> dict:
 
     # Update property status
     if d.get("property_id"):
-        supabase.table("auction_properties") \
+        _sb().table("auction_properties") \
             .update({"status": "CLOSED"}) \
             .eq("id", d["property_id"]) \
             .execute()

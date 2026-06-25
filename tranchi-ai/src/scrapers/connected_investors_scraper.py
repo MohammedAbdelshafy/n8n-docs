@@ -19,8 +19,14 @@ from playwright.async_api import async_playwright, Page
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
@@ -147,14 +153,14 @@ async def run_connected_investors_scraper(states: list[str] = None) -> int:
 
                 # Dedup
                 if email:
-                    if supabase.table("cash_buyers").select("id").eq("email", email).execute().data:
+                    if _sb().table("cash_buyers").select("id").eq("email", email).execute().data:
                         continue
                 if phone:
-                    if supabase.table("cash_buyers").select("id").eq("phone", phone).execute().data:
+                    if _sb().table("cash_buyers").select("id").eq("phone", phone).execute().data:
                         continue
 
                 try:
-                    supabase.table("cash_buyers").insert({
+                    _sb().table("cash_buyers").insert({
                         "name":             r["name"],
                         "phone":            phone,
                         "email":            email,

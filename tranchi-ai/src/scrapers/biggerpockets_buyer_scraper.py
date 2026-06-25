@@ -20,8 +20,14 @@ from playwright.async_api import async_playwright, Page
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY, TARGET_STATES
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
 
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 FORUMS = [
     ("77", "Wholesaling"),
     ("52", "Deals and Steals"),
@@ -146,7 +152,7 @@ async def run_biggerpockets_buyer_scraper() -> int:
 
                     # Dedup by BP URL in notes
                     bp_key = f"biggerpockets.com{link}"
-                    if supabase.table("cash_buyers").select("id") \
+                    if _sb().table("cash_buyers").select("id") \
                             .like("notes", f"%{bp_key}%").execute().data:
                         continue
 
@@ -163,7 +169,7 @@ async def run_biggerpockets_buyer_scraper() -> int:
                         "notes":            f"https://www.{bp_key} | \"{p['title'][:100]}\"",
                     }
                     try:
-                        supabase.table("cash_buyers").insert(row).execute()
+                        _sb().table("cash_buyers").insert(row).execute()
                         new += 1
                         name_str = contact.get("name") or "unknown"
                         print(f"  + {name_str} ({', '.join(states_found or ['?'])})")

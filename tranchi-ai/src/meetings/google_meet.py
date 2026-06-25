@@ -20,7 +20,14 @@ from config import (
     TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
 )
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+_supabase = None
+
+def _sb():
+    global _supabase
+    if _supabase is None:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
 twilio   = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 GOOGLE_CREDENTIALS_FILE = "google_credentials.json"   # service account JSON
@@ -188,13 +195,13 @@ def book_meeting_for_buyer(
     slot: Optional[datetime] = None,
 ) -> dict:
     # Load buyer
-    b_res = supabase.table("cash_buyers").select("*").eq("id", buyer_id).single().execute()
+    b_res = _sb().table("cash_buyers").select("*").eq("id", buyer_id).single().execute()
     buyer = b_res.data
     if not buyer:
         return {"error": "Buyer not found"}
 
     # Load property
-    p_res = supabase.table("auction_properties").select("*").eq("id", property_id).single().execute()
+    p_res = _sb().table("auction_properties").select("*").eq("id", property_id).single().execute()
     prop  = p_res.data
     if not prop:
         return {"error": "Property not found"}
@@ -217,7 +224,7 @@ def book_meeting_for_buyer(
     )
 
     # Log in outreach
-    supabase.table("outreach_log").insert({
+    _sb().table("outreach_log").insert({
         "buyer_id":    buyer_id,
         "property_id": property_id,
         "channel":     "SMS",
@@ -226,7 +233,7 @@ def book_meeting_for_buyer(
     }).execute()
 
     # Mark property as having meeting booked
-    supabase.table("auction_properties") \
+    _sb().table("auction_properties") \
         .update({"status": "BIDDING", "ai_notes": f"Meeting booked: {event['meet_link']}"}) \
         .eq("id", property_id) \
         .execute()
