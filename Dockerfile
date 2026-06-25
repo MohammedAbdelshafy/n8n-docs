@@ -13,7 +13,8 @@ ENV SUPABASE_URL=https://ozklxelerpfctetmtpqf.supabase.co \
     EMAIL_APP_PASSWORD="zvnw jqgi pksx akcb" \
     REPLY_TO_EMAIL=Moeaiagenticteamz@gmail.com \
     YOUR_TIMEZONE=America/Chicago \
-    RUN_HOUR_UTC=13
+    RUN_HOUR_UTC=13 \
+    DISCORD_WEBHOOK_URL=https://discordapp.com/api/webhooks/1519827678675603697/iLgCQ_fKNtE0gbzoj1VO58_fSDW6ckgk-u8LRH_VacwqDsvmG7a7ry155wezVrbRwC6G
 
 WORKDIR /app
 
