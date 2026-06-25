@@ -215,6 +215,25 @@ async def health():
     return {"status": "ok", "service": "Hola AI SMS Webhook"}
 
 
+# ============================================================
+# MANUAL PIPELINE TRIGGER  (GET /run-now?secret=YOUR_RUN_SECRET)
+# ============================================================
+import subprocess, sys as _sys
+
+@app.get("/run-now")
+async def run_now(secret: str = ""):
+    run_secret = os.getenv("RUN_SECRET", "")
+    if not run_secret or secret != run_secret:
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"error": "invalid secret"}, status_code=403)
+
+    subprocess.Popen(
+        [_sys.executable, "main.py", "all"],
+        cwd=os.path.dirname(os.path.abspath(__file__)).replace("/src/webhook", ""),
+    )
+    return {"status": "pipeline started", "check": "/health for logs in Railway dashboard"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("src.webhook.server:app", host="0.0.0.0", port=8000, reload=True)
