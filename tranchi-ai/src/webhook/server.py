@@ -223,6 +223,8 @@ async def run_now(secret: str = ""):
     run_secret = os.getenv("RUN_SECRET", "holaai2024")
     if secret != run_secret:
         return JSONResponse({"error": "invalid secret"}, status_code=403)
+    from src.notifications.discord_notify import notify_pipeline_started
+    notify_pipeline_started("all")
     app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     subprocess.Popen([_sys.executable, "main.py", "all"], cwd=app_dir)
     return {"status": "pipeline started — check Railway deploy logs"}

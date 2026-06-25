@@ -114,6 +114,8 @@ def main():
         print("\n[2/7] AI UNDERWRITING...")
         result = run_underwriting()
         print(f"     Approved: {result['approved']} | Rejected: {result['rejected']}")
+        from src.notifications.discord_notify import notify_daily_summary
+        notify_daily_summary(result)
 
     if mode == "deal-hunt":
         # Full pipeline: county + national scrape → AI underwrite → show top deals

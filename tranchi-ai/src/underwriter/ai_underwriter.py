@@ -166,6 +166,8 @@ def run_underwriting() -> dict:
             if status == "APPROVE":
                 approved += 1
                 print(f"APPROVED [{grade}] Est. profit: ${profit:,.0f}")
+                from src.notifications.discord_notify import notify_approved_deal
+                notify_approved_deal(prop, decision)
             else:
                 rejected += 1
                 reason = decision.get("reject_reason", "")
