@@ -36,6 +36,14 @@ ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
 
 TIMEOUT = 45   # seconds
 
+# Groq sits behind Cloudflare, which 403s (error 1010) the default
+# `python-httpx` user-agent. A normal browser UA is required or every Groq
+# call fails and falls through to the (often empty) paid fallbacks.
+BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+
 
 def _clean_json(text: str) -> str:
     """Strip markdown fences that some models add."""
@@ -54,6 +62,7 @@ def _groq(system: str, user: str, max_tokens: int) -> str:
         headers={
             "Authorization": f"Bearer {GROQ_KEY}",
             "Content-Type":  "application/json",
+            "User-Agent":    BROWSER_UA,
         },
         json={
             "model":    GROQ_MODEL,
@@ -77,6 +86,7 @@ def _glm(system: str, user: str, max_tokens: int) -> str:
         headers={
             "Authorization": f"Bearer {GLM_KEY}",
             "Content-Type":  "application/json",
+            "User-Agent":    BROWSER_UA,
         },
         json={
             "model":    GLM_MODEL,
