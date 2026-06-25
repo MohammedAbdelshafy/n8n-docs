@@ -5,6 +5,15 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8000 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
+# Runtime defaults — override in Railway Variables for production
+ENV SUPABASE_URL=https://ozklxelerpfctetmtpqf.supabase.co \
+    SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96a2x4ZWxlcnBmY3RldG10cHFmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjIxMjg5OCwiZXhwIjoyMDk3Nzg4ODk4fQ.KLkPE0PyUyuWh2qRoaxlzaokkni4_lrLw7TljpKUYoM \
+    GLM_API_KEY=9cb0afa0459843a7ab81b713da3f2e4d.zSHt6wyTKeQxJrbg \
+    EMAIL_ADDRESS=Moeaiagenticteamz@gmail.com \
+    REPLY_TO_EMAIL=Moeaiagenticteamz@gmail.com \
+    YOUR_TIMEZONE=America/Chicago \
+    RUN_HOUR_UTC=13
+
 WORKDIR /app
 
 # System deps + Chromium system libraries (needed for Playwright)
