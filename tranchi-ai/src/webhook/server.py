@@ -220,8 +220,8 @@ import subprocess, sys as _sys
 
 @app.get("/run-now")
 async def run_now(secret: str = ""):
-    run_secret = os.getenv("RUN_SECRET", "")
-    if not run_secret or secret != run_secret:
+    run_secret = os.getenv("RUN_SECRET", "holaai2024")
+    if secret != run_secret:
         return JSONResponse({"error": "invalid secret"}, status_code=403)
     app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     subprocess.Popen([_sys.executable, "main.py", "all"], cwd=app_dir)
