@@ -57,6 +57,12 @@ def main():
     else:
         print("[scheduler] DISABLE_CRON=1 — web-only mode", flush=True)
 
+    # Start Discord bot in background thread if token is set
+    if os.getenv("DISCORD_BOT_TOKEN"):
+        from src.notifications.discord_bot import run_bot
+        threading.Thread(target=run_bot, daemon=True).start()
+        print("[discord] bot thread started", flush=True)
+
     import uvicorn
     port = int(os.getenv("PORT", "8000"))
     print(f"[web] serving webhook + funnel on 0.0.0.0:{port}", flush=True)
