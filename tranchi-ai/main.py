@@ -144,6 +144,14 @@ def main():
               f"({r['facebook_verified']} Facebook-verified)")
         return
 
+    if mode == "buyers-yp":
+        from src.scrapers.yellowpages_buyer_scraper import run_yellowpages_buyer_scraper
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        r = asyncio.run(run_yellowpages_buyer_scraper(states=states))
+        print(f"\n[BUYERS-YP] saved {r['saved']} new buyers "
+              f"({r['facebook_verified']} Facebook-verified)")
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
