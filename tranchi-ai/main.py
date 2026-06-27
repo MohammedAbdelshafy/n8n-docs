@@ -136,6 +136,14 @@ def main():
         run_buyer_aggregator()
         return
 
+    if mode == "buyers-places":
+        from src.scrapers.places_buyer_scraper import run_places_buyer_scraper
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        r = run_places_buyer_scraper(states=states)
+        print(f"\n[BUYERS-PLACES] saved {r['saved']} new buyers "
+              f"({r['facebook_verified']} Facebook-verified)")
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"

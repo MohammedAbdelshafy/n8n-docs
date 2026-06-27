@@ -20,6 +20,9 @@ REPLY_TO_EMAIL     = os.getenv("REPLY_TO_EMAIL", EMAIL_ADDRESS)
 EMAIL_SMTP_HOST    = os.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com")
 EMAIL_SMTP_PORT    = int(os.getenv("EMAIL_SMTP_PORT", "587"))
 
+# Google Places API — official, reliable cash-buyer finder (free $200/mo credit)
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
 # Twilio — optional SMS (add after A2P 10DLC registration)
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN  = os.getenv("TWILIO_AUTH_TOKEN")
