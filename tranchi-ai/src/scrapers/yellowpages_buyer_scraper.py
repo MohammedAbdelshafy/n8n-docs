@@ -71,6 +71,8 @@ def _enrich_from_site(url: str) -> tuple[Optional[str], Optional[str]]:
 
 
 # ── Groq extraction of YP business listings ───────────────────────────
+import time as _time
+
 def _extract_listings(page_text: str, city: str, state: str) -> list[dict]:
     from src.utils.free_llm import call_llm
     system = (
@@ -79,9 +81,10 @@ def _extract_listings(page_text: str, city: str, state: str) -> list[dict]:
         "Only real-estate investor / 'we buy houses' / cash-buyer businesses. "
         "If none, return []."
     )
+    _time.sleep(3)  # throttle so we never trip Groq's per-minute rate limit
     try:
-        raw = call_llm(system, f"City: {city}, {state}.\n\nPAGE:\n{page_text[:45000]}",
-                       max_tokens=3000).strip()
+        raw = call_llm(system, f"City: {city}, {state}.\n\nPAGE:\n{page_text[:14000]}",
+                       max_tokens=2000).strip()
         if raw.startswith("```"):
             raw = raw.strip("`")
             if raw.lower().startswith("json"):
@@ -175,8 +178,8 @@ def save_buyers(buyers: list[dict]) -> int:
 # ── Main runner ───────────────────────────────────────────────────────
 async def run_yellowpages_buyer_scraper(
     states: Optional[list[str]] = None,
-    queries_per_city: int = 2,
-    cities_per_state: int = 3,
+    queries_per_city: int = 1,
+    cities_per_state: int = 2,
 ) -> dict:
     from playwright.async_api import async_playwright
     states = states or TARGET_STATES
