@@ -45,9 +45,16 @@ def _sb():
 
 @client.event
 async def on_ready():
+    # Sync commands to every guild the bot is in — guild syncs are INSTANT,
+    # unlike global syncs which can take up to an hour to appear.
     try:
+        for guild in client.guilds:
+            tree.copy_global_to(guild=guild)
+            await tree.sync(guild=guild)
+            print(f"[DISCORD BOT] synced commands to guild: {guild.name} ({guild.id})", flush=True)
+        # Also push a global sync as a fallback for any future guilds.
         await tree.sync()
-        print(f"[DISCORD BOT] Online as {client.user} — slash commands synced", flush=True)
+        print(f"[DISCORD BOT] Online as {client.user} — slash commands ready", flush=True)
     except Exception as e:
         print(f"[DISCORD BOT] command sync error: {e}", flush=True)
 
