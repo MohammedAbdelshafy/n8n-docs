@@ -9,117 +9,78 @@
     "sell my house fast"
   ],
   "target_cities": {
-    "TX": [
-      "Houston",
-      "Dallas",
-      "San Antonio",
-      "Fort Worth",
-      "Austin",
-      "El Paso",
-      "Arlington"
-    ],
-    "FL": [
-      "Miami",
-      "Tampa",
-      "Orlando",
-      "Jacksonville",
-      "Fort Lauderdale",
-      "St Petersburg"
-    ],
-    "OH": [
-      "Columbus",
-      "Cleveland",
-      "Cincinnati",
-      "Dayton",
-      "Akron",
-      "Toledo"
-    ],
-    "GA": [
-      "Atlanta",
-      "Savannah",
-      "Augusta",
-      "Macon",
-      "Columbus",
-      "Sandy Springs"
-    ],
-    "NC": [
-      "Charlotte",
-      "Raleigh",
-      "Greensboro",
-      "Durham",
-      "Winston-Salem",
-      "Fayetteville"
-    ],
-    "TN": [
-      "Nashville",
-      "Memphis",
-      "Knoxville",
-      "Chattanooga",
-      "Clarksville",
-      "Murfreesboro"
-    ],
-    "AZ": [
-      "Phoenix",
-      "Tucson",
-      "Mesa",
-      "Scottsdale",
-      "Chandler",
-      "Tempe",
-      "Gilbert"
-    ]
+    "TX": ["Houston", "Dallas", "San Antonio", "Fort Worth", "Austin", "El Paso", "Arlington"],
+    "FL": ["Miami", "Tampa", "Orlando", "Jacksonville", "Fort Lauderdale", "St Petersburg"],
+    "OH": ["Columbus", "Cleveland", "Cincinnati", "Dayton", "Akron", "Toledo"],
+    "GA": ["Atlanta", "Savannah", "Augusta", "Macon", "Columbus", "Sandy Springs"],
+    "NC": ["Charlotte", "Raleigh", "Greensboro", "Durham", "Winston-Salem", "Fayetteville"],
+    "TN": ["Nashville", "Memphis", "Knoxville", "Chattanooga", "Clarksville", "Murfreesboro"],
+    "AZ": ["Phoenix", "Tucson", "Mesa", "Scottsdale", "Chandler", "Tempe", "Gilbert"]
   },
   "auction_sources": [
     {
-      "name": "HUD_HOMES",
-      "url": "https://www.hudhomestore.gov/Listing/PropertySearchResult.aspx",
-      "params": {
-        "StateCode": "{state}",
-        "StatusCode": "ACT",
-        "SearchType": "A"
-      },
-      "property_selector": ".property-listing",
-      "fields": {
-        "address": ".prop-address",
-        "price": ".bid-price",
-        "beds": ".beds",
-        "baths": ".baths",
-        "sqft": ".sqft",
-        "url": "a[href]"
-      },
-      "llm_extract": false,
-      "rate_limit_seconds": 2
-    },
-    {
-      "name": "GOVEASE_TAX_SALE",
-      "url": "https://www.govease.com/auctions/search",
-      "params": {
-        "state": "{state_slug}",
-        "status": "upcoming"
-      },
-      "llm_extract": true,
-      "llm_prompt": "Extract all auction property listings. For each property return: address, city, state, opening_bid, auction_date, parcel_id, property_type, and url. Return as JSON array.",
-      "rate_limit_seconds": 3
-    },
-    {
       "name": "AUCTION_COM",
-      "url": "https://www.auction.com/residential/?states={state}&priceMin=1000&priceMax=150000",
+      "url": "https://www.auction.com/residential/{state}_state/",
       "llm_extract": true,
-      "llm_prompt": "Extract all property auction listings. For each return: address, city, state, opening_bid, auction_date, bedrooms, bathrooms, sqft, property_type, url. Return as JSON array.",
-      "rate_limit_seconds": 3
+      "scroll": true,
+      "llm_prompt": "This is an Auction.com residential foreclosure/auction listing page. Extract EVERY property listed. For each property return an object with: address, city, state, zip, opening_bid (the starting/current bid as a number), estimated_value, auction_date, beds, baths, sqft, property_type, url. Return a JSON array. If a field is missing use null. Skip ads and navigation.",
+      "rate_limit_seconds": 4
     },
     {
-      "name": "FANNIE_MAE",
-      "url": "https://www.homepath.com/listings.html#/search?state={state}&maxListPrice=150000",
+      "name": "XOME_AUCTIONS",
+      "url": "https://www.xome.com/auctions?state={state}",
       "llm_extract": true,
-      "llm_prompt": "Extract all HomePath property listings. For each return: address, city, state, list_price, bedrooms, bathrooms, sqft, year_built, url. Return as JSON array.",
-      "rate_limit_seconds": 2
+      "scroll": true,
+      "llm_prompt": "This is a Xome real-estate auction page. Extract every auction property. For each return: address, city, state, zip, opening_bid, estimated_value, auction_date, beds, baths, sqft, property_type, url. JSON array only. Missing fields = null.",
+      "rate_limit_seconds": 4
+    },
+    {
+      "name": "HUBZU",
+      "url": "https://www.hubzu.com/search/listings?searchType=buy&state={state}",
+      "llm_extract": true,
+      "scroll": true,
+      "llm_prompt": "This is a Hubzu listing/auction page. Extract every property. For each return: address, city, state, zip, opening_bid, estimated_value, auction_date, beds, baths, sqft, property_type, url. JSON array only. Missing fields = null.",
+      "rate_limit_seconds": 4
     },
     {
       "name": "BID4ASSETS",
       "url": "https://www.bid4assets.com/searchsales?q=&state={state}&category=Real+Estate",
       "llm_extract": true,
-      "llm_prompt": "Extract all real estate auction listings. For each return: title, address, city, state, opening_bid, auction_date, url. Return as JSON array.",
+      "scroll": true,
+      "llm_prompt": "This is a Bid4Assets county tax/foreclosure auction search page. Extract every real-estate auction listing. For each return: title, address, city, state, zip, opening_bid, auction_date, parcel_id, url. JSON array only. Missing fields = null.",
+      "rate_limit_seconds": 4
+    },
+    {
+      "name": "GOVEASE_TAX_SALE",
+      "url": "https://www.govease.com/auctions",
+      "llm_extract": true,
+      "scroll": true,
+      "llm_prompt": "This is a GovEase tax-sale auction directory. Extract every auction or property for state {state}. For each return: address, city, state, opening_bid, auction_date, parcel_id, property_type, url. JSON array only. Missing fields = null.",
+      "rate_limit_seconds": 4
+    },
+    {
+      "name": "HUD_HOMES",
+      "url": "https://www.hudhomestore.gov/Listing/PropertySearchResult.aspx?sStateCode={state}&sStatusCode=ACT",
+      "llm_extract": true,
+      "scroll": true,
+      "llm_prompt": "This is a HUD Home Store search-results page of HUD-owned homes for sale. Extract every property. For each return: address, city, state, zip, list_price, beds, baths, sqft, year_built, property_type, url, case_number. JSON array only. Missing fields = null.",
       "rate_limit_seconds": 3
+    },
+    {
+      "name": "REALTOR_FORECLOSURE",
+      "url": "https://www.realtor.com/realestateandhomes-search/{state_slug}/type-foreclosure",
+      "llm_extract": true,
+      "scroll": true,
+      "llm_prompt": "This is a Realtor.com foreclosure search page. Extract every foreclosure/pre-foreclosure property. For each return: address, city, state, zip, list_price, beds, baths, sqft, year_built, property_type, foreclosure_status, url. JSON array only. Missing fields = null.",
+      "rate_limit_seconds": 4
+    },
+    {
+      "name": "ZILLOW_PREFORECLOSURE",
+      "url": "https://www.zillow.com/{state_slug}/foreclosures/",
+      "llm_extract": true,
+      "scroll": true,
+      "llm_prompt": "This is a Zillow foreclosure/pre-foreclosure search page. Extract every property card. For each return: address, city, state, zip, price (or opening_bid), zestimate (estimated_value), beds, baths, sqft, foreclosure_status, url. JSON array only. Missing fields = null.",
+      "rate_limit_seconds": 5
     }
   ],
   "state_slugs": {
@@ -133,48 +94,21 @@
   },
   "playwright_settings": {
     "headless": true,
-    "timeout_ms": 30000,
-    "viewport": {
-      "width": 1280,
-      "height": 800
-    },
-    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "zoom_levels": [
-      14,
-      15,
-      16
-    ],
+    "timeout_ms": 45000,
+    "viewport": { "width": 1366, "height": 900 },
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "locale": "en-US",
+    "timezone": "America/Chicago",
+    "zoom_levels": [14, 15, 16],
     "max_results_per_query": 40
   },
   "proxies": [],
   "free_lead_sources": {
-    "craigslist_buyer_queries": [
-      "we buy houses",
-      "cash home buyer",
-      "real estate investor",
-      "house flipping"
-    ],
+    "craigslist_buyer_queries": ["we buy houses", "cash home buyer", "real estate investor", "house flipping"],
     "craigslist_fsbo_query": "for sale by owner",
-    "reddit_buyer_subreddits": [
-      "WholesaleRealEstate",
-      "realestateinvesting",
-      "realestate"
-    ],
-    "zillow_fsbo_states": [
-      "TX",
-      "FL",
-      "OH",
-      "GA",
-      "NC",
-      "TN",
-      "AZ"
-    ],
-    "lead_sell_platforms": [
-      "r/WholesaleRealEstate",
-      "r/realestateinvesting",
-      "Facebook Real Estate Investor groups",
-      "BiggerPockets Marketplace"
-    ],
+    "reddit_buyer_subreddits": ["WholesaleRealEstate", "realestateinvesting", "realestate"],
+    "zillow_fsbo_states": ["TX", "FL", "OH", "GA", "NC", "TN", "AZ"],
+    "lead_sell_platforms": ["r/WholesaleRealEstate", "r/realestateinvesting", "Facebook Real Estate Investor groups", "BiggerPockets Marketplace"],
     "notes": "All free. Craigslist and Reddit use public APIs/RSS. Zillow uses Playwright."
   }
 }
