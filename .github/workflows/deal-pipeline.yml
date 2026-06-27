@@ -1,0 +1,58 @@
+name: Hola AI Deal Pipeline
+
+# Runs the full deal-hunting pipeline on GitHub's free runners.
+#   - Daily on a schedule (08:00 America/Chicago = 13:00 UTC)
+#   - Or manually via the "Run workflow" button (Actions tab)
+#
+# Secrets are read from repo Settings → Secrets and variables → Actions.
+# Nothing sensitive lives in the repo.
+
+on:
+  schedule:
+    - cron: "0 13 * * *"   # 13:00 UTC daily
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Pipeline mode (all, scrape, underwrite, deal-hunt)"
+        required: false
+        default: "all"
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: tranchi-ai
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run pipeline
+        env:
+          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:        ${{ secrets.SUPABASE_KEY }}
+          GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
+          GLM_API_KEY:         ${{ secrets.GLM_API_KEY }}
+          GEMINI_API_KEY:      ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          EMAIL_ADDRESS:       ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_APP_PASSWORD:  ${{ secrets.EMAIL_APP_PASSWORD }}
+          REPLY_TO_EMAIL:      ${{ secrets.REPLY_TO_EMAIL }}
+          YOUR_TIMEZONE:       ${{ secrets.YOUR_TIMEZONE }}
+        run: python main.py "${{ github.event.inputs.mode || 'all' }}"
