@@ -1,10 +1,10 @@
 """
 Twilio Webhook Server (FastAPI)
 Handles inbound SMS replies from buyers:
-  "YES" / "INTERESTED" → auto-book Google Meet, send link
-  "NO" / "PASS"        → mark cold in DB
-  "STOP"               → permanent opt-out
-  Other                → log the reply for manual review
+  "YES" / "INTERESTED" -> auto-book Google Meet, send link
+  "NO" / "PASS"        -> mark cold in DB
+  "STOP"               -> permanent opt-out
+  Other                -> log the reply for manual review
 
 Deploy this on Railway / Render / Fly.io and point your Twilio
 phone number's "A MESSAGE COMES IN" webhook to:
@@ -22,7 +22,7 @@ from config import SUPABASE_URL, SUPABASE_KEY, TWILIO_AUTH_TOKEN
 
 app = FastAPI(title="Hola AI")
 
-# Lazy Supabase client — not created at import time so the process starts
+# Lazy Supabase client - not created at import time so the process starts
 # even when env vars haven't propagated yet (e.g. first Railway boot).
 _supabase = None
 
@@ -53,8 +53,6 @@ app.include_router(seller_router)
 # Serve the funnel HTML files
 FUNNEL_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "funnel")
 
-FUNNEL_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "funnel")
-
 def _funnel(filename: str):
     path = os.path.join(FUNNEL_DIR, filename)
     if os.path.exists(path):
@@ -63,11 +61,15 @@ def _funnel(filename: str):
 
 @app.get("/")
 async def landing():
-    return _funnel("index.html")
+    return _funnel("buyers.html")
 
 @app.get("/thank-you.html")
 async def thank_you():
     return _funnel("thank-you.html")
+
+@app.get("/buyers")
+async def buyers_landing():
+    return _funnel("buyers.html")
 
 @app.get("/sell")
 async def seller_landing():
@@ -91,7 +93,7 @@ STOP_PATTERNS = re.compile(r"^\s*stop\s*$", re.I)
 # ============================================================
 def validate_twilio_signature(request_url: str, params: dict, signature: str) -> bool:
     if not TWILIO_AUTH_TOKEN:
-        return True  # Twilio not configured — skip validation (webhook won't be called anyway)
+        return True  # Twilio not configured - skip validation (webhook won't be called anyway)
     sorted_params = "".join(f"{k}{v}" for k, v in sorted(params.items()))
     s = request_url + sorted_params
     mac = hmac.new(TWILIO_AUTH_TOKEN.encode(), s.encode(), hashlib.sha1)
@@ -151,7 +153,7 @@ async def inbound_sms(
     message = Body.strip()
     print(f"[INBOUND] {phone}: {message}")
 
-    # Hard stop — permanent opt-out
+    # Hard stop - permanent opt-out
     sb = get_supabase()
 
     if STOP_PATTERNS.match(message):
@@ -203,7 +205,7 @@ async def inbound_sms(
             .execute()
         print(f"[PASS] {phone} passed on property {property_id}")
 
-    # Return empty 200 — Twilio doesn't need a reply body unless you want to auto-respond
+    # Return empty 200 - Twilio doesn't need a reply body unless you want to auto-respond
     return ""
 
 
@@ -215,7 +217,7 @@ async def health():
     return {"status": "ok", "service": "Hola AI SMS Webhook"}
 
 
-# ── Manual pipeline trigger (/run-now?secret=RUN_SECRET) ──────
+# -- Manual pipeline trigger (/run-now?secret=RUN_SECRET) ------
 import subprocess, sys as _sys
 
 @app.get("/run-now")
@@ -227,7 +229,7 @@ async def run_now(secret: str = ""):
     notify_pipeline_started("all")
     app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     subprocess.Popen([_sys.executable, "main.py", "all"], cwd=app_dir)
-    return {"status": "pipeline started — check Railway deploy logs"}
+    return {"status": "pipeline started - check Railway deploy logs"}
 
 
 if __name__ == "__main__":
