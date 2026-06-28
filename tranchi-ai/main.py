@@ -172,6 +172,13 @@ def main():
         export_county(states=states)
         return
 
+    if mode == "opendata":
+        from src.scrapers.open_data_scraper import run_open_data_scraper
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        r = run_open_data_scraper(states=states)
+        print(f"\n[OPENDATA] saved {r['saved']} distressed-property leads")
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
