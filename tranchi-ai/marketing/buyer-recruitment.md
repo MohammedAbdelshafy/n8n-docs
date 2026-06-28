@@ -1,96 +1,90 @@
-# Cash-Buyer Recruitment Posts
+# Lead-Gen Playbook — Two Golden CSVs to Sell
 
-Goal: drive real estate investors to the opt-in page so they join the buyer list
-with `opt_in=TRUE` (TCPA-compliant — we can then legally email/text them deals).
+The product (what your friend's lead-gen agency buys):
 
-**Opt-in link:** https://n8n-docs-production-b38a.up.railway.app/buyers
+  CSV #1 — BUYERS:  active cash buyers + wholesalers, ready to buy
+  CSV #2 — SELLERS: homeowners + agents ready to sell fast
 
-Rules of thumb:
-- Lead with value, not a pitch. Investors hate spam.
-- One link, clear ask. Don't oversell.
-- Post in groups where you're a member and it's allowed; respect each group's rules.
-- Reddit: be a real person, no link-dropping in strict subs — comment value first.
+Both fill from opt-in funnels (consent disclosed → legally sellable).
 
----
+  Buyers funnel:  https://n8n-docs-production-b38a.up.railway.app/buyers
+  Sellers funnel: https://n8n-docs-production-b38a.up.railway.app/sell
 
-## 1. Facebook Investor Groups
+Export to sell:
+  python main.py export-buyers     # CSV #1  ($70/lead)
+  python main.py export            # CSV #2  (seller leads)
 
-> 🏠 **Free off-market deal alerts for cash buyers (TX/FL/OH/GA/NC/TN/AZ)**
+Rule: post where you're a member and it's allowed. Lead with value, one link.
+
+=====================================================================
+# CSV #1 — RECRUIT CASH BUYERS / WHOLESALERS  →  /buyers
+=====================================================================
+
+## Facebook (investor / wholesale / "cash buyers" groups)
+
+> 💰 Building a **verified cash-buyer list** for off-market deals (TX/FL/OH/GA/NC/TN/AZ).
 >
-> I built an AI that scans foreclosure auctions, tax sales & pre-foreclosures
-> every morning, runs each one through the 70% rule, and only flags the ones
-> that actually pencil out for a flip or BRRRR.
+> If you're an ACTIVE buyer — closing deals now, not "someday" — I'll send you
+> AI-vetted foreclosure/auction deals that pass the 70% rule, before they hit the MLS. Free.
 >
-> Instead of sitting on them, I'm sending the vetted deals straight to a cash-buyer
-> list — free. No wholesaling fees to join, no spam, unsubscribe anytime.
->
-> If you buy in TX, FL, OH, GA, NC, TN or AZ and want first look before these hit
-> the MLS, drop your buy box here 👇
-> https://n8n-docs-production-b38a.up.railway.app/buyers
->
-> Tell me your target market in the comments and I'll prioritize it.
-
-**Shorter variant (for stricter groups):**
-
-> Cash buyers — I send free AI-vetted off-market deals (foreclosures/auctions,
-> 70%-rule checked) to my buyer list. TX/FL/OH/GA/NC/TN/AZ. Free to join 👇
+> Drop your buy box (state, price range, property type) here and you're in 👇
 > https://n8n-docs-production-b38a.up.railway.app/buyers
 
----
+## Reddit (r/realestateinvesting, r/WholesaleRealEstate)
 
-## 2. Reddit  (r/realestateinvesting, r/WholesaleRealEstate, r/RealEstateInvestingTips)
-
-**Title:** Built an AI that filters foreclosure/auction deals by the 70% rule — sending the good ones to cash buyers free
-
-> I got tired of manually sifting through auction.com, county tax sales and
-> pre-foreclosure lists, so I automated it. Every morning it scrapes new
-> distressed listings across 7 states, pulls comps, runs the 70% rule, and
-> kicks out anything that doesn't leave real margin after repairs + holding.
+> **Title:** Compiling an active cash-buyer list — free AI-vetted deals in exchange for your buy box
 >
-> The deals that survive, I'm routing to a cash-buyer list instead of letting
-> them die in a spreadsheet. It's free — I'd rather move volume than gatekeep.
->
-> If you're an active buyer in TX/FL/OH/GA/NC/TN/AZ, here's the buy-box form:
+> I run an automated pipeline that underwrites distressed listings with the 70% rule
+> and routes the ones that pencil out to cash buyers. Building the buyer side now.
+> If you're actively closing in TX/FL/OH/GA/NC/TN/AZ, here's the buy-box form:
 > https://n8n-docs-production-b38a.up.railway.app/buyers
+
+## LinkedIn
+
+> Building a vetted network of active cash buyers + wholesalers across 7 states.
+> Free AI-underwritten off-market deals in exchange for your buy box. Active investors only 👇
+> https://n8n-docs-production-b38a.up.railway.app/buyers
+> #realestateinvesting #cashbuyers #offmarket #wholesale
+
+**Where:** FB "Cash Buyers Network", "[City] Real Estate Investors", "Wholesale Real Estate";
+Reddit REI subs; LinkedIn investor groups; BiggerPockets Marketplace.
+
+=====================================================================
+# CSV #2 — RECRUIT MOTIVATED SELLERS / AGENTS  →  /sell
+=====================================================================
+
+## Facebook (local "sell my house", neighborhood, "[City] homes" groups)
+
+> 🏠 **Need to sell your house fast? Cash offer, any condition, no fees.**
 >
-> Happy to answer questions about the underwriting logic in the comments.
-
-*Note: Some subs ban links in posts. If so, post the value content and put the
-link in a comment or send on request.*
-
----
-
-## 3. LinkedIn
-
-> Most off-market real estate deals die in a spreadsheet before a buyer ever sees them.
+> We buy houses as-is across TX/FL/OH/GA/NC/TN/AZ — behind on payments, inherited,
+> tired landlord, needs work, doesn't matter. No agents, no commissions, you pick the close date.
 >
-> I built an automated pipeline that fixes that: every day it scans foreclosure
-> auctions, tax sales and pre-foreclosures across 7 states, underwrites each one
-> against the 70% rule with comps, and surfaces only the deals with real margin.
->
-> Rather than hoard them, I'm sending the vetted deals to a cash-buyer network — free.
->
-> If you're an active investor or fund buying in TX, FL, OH, GA, NC, TN or AZ,
-> I'd like to get you on the list. First look, before the MLS:
-> 👉 https://n8n-docs-production-b38a.up.railway.app/buyers
->
-> #realestateinvesting #offmarket #cashbuyers #foreclosures #wholesale
+> Get your no-obligation cash offer here 👇
+> https://n8n-docs-production-b38a.up.railway.app/sell
 
----
+## Craigslist (real estate - by owner / wanted)
 
-## Where to post (high-signal groups)
+> **CASH for your house — any condition, close in 7 days.** No fees, no commissions,
+> no repairs. Facing foreclosure, inherited, or just want out fast? Get a free cash offer:
+> https://n8n-docs-production-b38a.up.railway.app/sell
 
-**Facebook** (search these, join, then post):
-- "Real Estate Investing" / "Cash Buyers Network [your state]"
-- "[City] Real Estate Investors" (Houston, Dallas, Atlanta, Tampa, Phoenix, etc.)
-- "Wholesale Real Estate" / "Fix and Flip [state]"
+## For AGENTS (LinkedIn / agent FB groups)
 
-**Reddit:**
-- r/realestateinvesting, r/WholesaleRealEstate, r/RealEstateTechnology
+> Agents — got a pocket listing or a seller who needs a fast, as-is close?
+> I'm a cash buyer closing in 7-14 days across 7 states, any condition.
+> Send me the address for a same-day offer 👇
+> https://n8n-docs-production-b38a.up.railway.app/sell
 
-**LinkedIn:**
-- Personal post + comment in real-estate investor groups
-- DM connections who list "real estate investor / acquisitions" in their title
+**Where:** FB "Sell My House Fast [city]", neighborhood/Buy-Nothing groups, Craigslist
+real-estate, agent groups, Nextdoor.
 
-**BiggerPockets:**
-- Forums → Marketplace; profile keyword "cash buyer" (see biggerpockets_post.txt)
+=====================================================================
+# The proven model you're copying
+=====================================================================
+This IS what working real-estate lead apps do (Lead Sherpa, REISift, Motivated
+Leads, BatchLeads resellers): run opt-in funnels → build buyer + seller lists →
+sell the lists / charge per lead. The ONLY part that costs money in their version
+is the data they buy upfront. Yours is $0 because the leads come to YOU via the
+funnels — you just have to drive traffic (post in groups). Volume of posts = size
+of list = size of the check your friend writes.
