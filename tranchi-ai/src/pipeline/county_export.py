@@ -20,12 +20,15 @@ def _sb():
         _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     return _supabase
 
-FIELDS = ["full_name", "address", "city", "state", "zip",
-          "lead_type", "source_detail", "notes", "created_at"]
+FIELDS = ["name", "property_address", "city", "state", "zip",
+          "reason", "source", "status", "created_at"]
+
+PUBLIC_PREFIXES = ("OPEN_DATA", "COUNTY_RECORDS", "LIS_PENDENS")
 
 
 def export_county(states: Optional[list[str]] = None, out_path: str = None) -> str:
-    rows = _sb().table("seller_leads").select("*").eq("source", "COUNTY_RECORDS").execute().data or []
+    allrows = _sb().table("seller_leads").select("*").eq("consent_given", False).execute().data or []
+    rows = [r for r in allrows if (r.get("source") or "").startswith(PUBLIC_PREFIXES)]
     if states:
         ss = [s.upper() for s in states]
         rows = [r for r in rows if (r.get("state") or "").upper() in ss]

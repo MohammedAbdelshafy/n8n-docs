@@ -91,16 +91,15 @@ def _fetch(src: dict) -> list[dict]:
             if not addr or not re.search(r"\d", addr):
                 continue
             out.append({
-                "full_name":     _first(rec, _OWNER_KEYS) or "Owner of Record",
-                "address":       addr,
-                "city":          _first(rec, _CITY_KEYS) or src.get("city", ""),
-                "state":         src["state"],
-                "zip":           _first(rec, _ZIP_KEYS) or "",
-                "source":        "OPEN_DATA",
-                "source_detail": f"{src['name']} ({src['distress']})",
-                "lead_type":     "DISTRESSED",
-                "notes":         f"distress={src['distress']} | {src['city']}, {src['state']}",
-                "consent_given": False,
+                "name":             _first(rec, _OWNER_KEYS) or "Owner of Record",
+                "property_address": addr,
+                "city":             _first(rec, _CITY_KEYS) or src.get("city", ""),
+                "state":            src["state"],
+                "zip":              _first(rec, _ZIP_KEYS) or "",
+                "reason":           src["distress"].upper(),   # CODE_VIOLATION | VACANT ...
+                "source":           f"OPEN_DATA:{src['name']}",
+                "status":           "NEW",
+                "consent_given":    False,
             })
     except Exception as e:
         print(f"  [OPENDATA] {src['name']} error: {e}")
@@ -113,7 +112,7 @@ def _save(records: list[dict]) -> int:
     seen = set()
     batch = []
     for r in records:
-        key = (r["address"].lower(), r["state"])
+        key = (r["property_address"].lower(), r["state"])
         if key in seen:
             continue
         seen.add(key)
@@ -122,13 +121,14 @@ def _save(records: list[dict]) -> int:
     for r in batch:
         try:
             existing = (_sb().table("seller_leads").select("id")
-                        .eq("address", r["address"]).eq("source", "OPEN_DATA").execute())
+                        .eq("property_address", r["property_address"])
+                        .eq("state", r["state"]).execute())
             if existing.data:
                 continue
             if _sb().table("seller_leads").insert(r).execute().data:
                 saved += 1
         except Exception as e:
-            print(f"  [OPENDATA] save error ({r.get('address')}): {e}")
+            print(f"  [OPENDATA] save error ({r.get('property_address')}): {e}")
     return saved
 
 
