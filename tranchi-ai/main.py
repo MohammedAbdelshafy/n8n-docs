@@ -152,6 +152,13 @@ def main():
               f"({r['facebook_verified']} Facebook-verified)")
         return
 
+    if mode == "export-buyers":
+        from src.pipeline.buyer_export import export_summary, export_buyers
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        export_summary()
+        export_buyers(states=states)
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
