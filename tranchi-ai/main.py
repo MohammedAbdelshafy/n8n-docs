@@ -159,6 +159,19 @@ def main():
         export_buyers(states=states)
         return
 
+    if mode == "county":
+        from src.scrapers.county_records_scraper import run_county_records_scraper
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        r = asyncio.run(run_county_records_scraper(states=states))
+        print(f"\n[COUNTY] saved {r['saved']} distressed properties (CSV #3)")
+        return
+
+    if mode == "export-county":
+        from src.pipeline.county_export import export_county
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        export_county(states=states)
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
