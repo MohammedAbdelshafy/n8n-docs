@@ -57,3 +57,11 @@ jobs:
           REPLY_TO_EMAIL:      ${{ secrets.REPLY_TO_EMAIL }}
           YOUR_TIMEZONE:       ${{ secrets.YOUR_TIMEZONE }}
         run: python main.py "${{ github.event.inputs.mode || 'all' }}"
+
+      - name: Upload CSV sheets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-sheets
+          path: tranchi-ai/*.csv
+          if-no-files-found: ignore
