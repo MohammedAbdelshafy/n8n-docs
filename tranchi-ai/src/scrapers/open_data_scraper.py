@@ -68,10 +68,11 @@ ARCGIS_SOURCES = [
     # ── Florida (user priority: Miami-Dade, Broward, Hillsborough) ──
     {"name": "Miami-Dade Code Compliance Violations", "city": "Miami", "state": "FL",
      "distress": "code_violation", "item": "da0e434c7a914bb983222393dab2b897", "layer": 0},
-    {"name": "Fort Lauderdale (Broward) Code Cases", "city": "Fort Lauderdale", "state": "FL",
-     "distress": "code_violation", "item": "6e36e6dc4bb04c069ceba3a50d9471d8", "layer": 0},
     {"name": "Cape Coral Code Enforcement Cases", "city": "Cape Coral", "state": "FL",
      "distress": "code_violation", "item": "5aae323b80e64301a8b2b1f7fee64912", "layer": 0},
+    # NOTE: Broward + Hillsborough publish code data via ArcGIS *apps/dashboards*
+    # (not queryable feature layers) — need the underlying FeatureServer layer URL.
+    # TODO: add once the hosted layer URLs are confirmed.
     # ── Maryland (migrated off Socrata to ArcGIS) ──
     {"name": "Baltimore Vacant Building Notices", "city": "Baltimore", "state": "MD",
      "distress": "vacant",
@@ -222,29 +223,63 @@ def _fetch_arcgis(src: dict) -> list[dict]:
     return out
 
 
+def _existing_keys(states: list[str]) -> set:
+    """Pre-load (address_lower, state) pairs already in the DB, one paged scan
+    per state — far fewer requests than a SELECT per record, and it keeps the
+    HTTP/2 connection from being exhausted mid-run."""
+    keys = set()
+    for st in states:
+        offset = 0
+        while True:
+            try:
+                rows = (_sb().table("seller_leads")
+                        .select("property_address")
+                        .eq("state", st)
+                        .range(offset, offset + 999).execute().data or [])
+            except Exception as e:
+                print(f"  [OPENDATA] preload {st} error: {e}")
+                break
+            for row in rows:
+                addr = (row.get("property_address") or "").lower()
+                if addr:
+                    keys.add((addr, st))
+            if len(rows) < 1000:
+                break
+            offset += 1000
+    return keys
+
+
 def _save(records: list[dict]) -> int:
-    saved = 0
-    # de-dup within batch first
-    seen = set()
-    batch = []
+    if not records:
+        return 0
+    states = sorted({r["state"] for r in records})
+    existing = _existing_keys(states)
+
+    # de-dup within batch and against the DB, in memory
+    seen, batch = set(), []
     for r in records:
         key = (r["property_address"].lower(), r["state"])
-        if key in seen:
+        if key in seen or key in existing:
             continue
         seen.add(key)
         batch.append(r)
 
-    for r in batch:
-        try:
-            existing = (_sb().table("seller_leads").select("id")
-                        .eq("property_address", r["property_address"])
-                        .eq("state", r["state"]).execute())
-            if existing.data:
-                continue
-            if _sb().table("seller_leads").insert(r).execute().data:
-                saved += 1
-        except Exception as e:
-            print(f"  [OPENDATA] save error ({r.get('property_address')}): {e}")
+    # bulk-insert in chunks; recreate the client if the h2 connection drops
+    global _supabase
+    saved, CHUNK = 0, 500
+    for i in range(0, len(batch), CHUNK):
+        chunk = batch[i:i + CHUNK]
+        for attempt in (1, 2):
+            try:
+                res = _sb().table("seller_leads").insert(chunk).execute()
+                saved += len(res.data or [])
+                break
+            except Exception as e:
+                if attempt == 1:
+                    print(f"  [OPENDATA] chunk insert retry ({len(chunk)} rows): {e}")
+                    _supabase = None  # force a fresh client / connection
+                else:
+                    print(f"  [OPENDATA] chunk insert failed ({len(chunk)} rows): {e}")
     return saved
 
 
