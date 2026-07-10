@@ -33,7 +33,8 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126 Safari/537.36"
 
 # Public Socrata datasets (no auth). distress = motivated-seller signal.
 # $limit returns up to N records in one call. $where filters recent.
-LIMIT = 1000  # Socrata returns up to 1000 rows per call without an app token
+LIMIT = 1000        # Socrata returns up to 1000 rows per page without an app token
+SOCRATA_CAP = 5000  # max rows pulled per Socrata source (paged via $offset)
 
 # ── SOCRATA datasets (no auth). Verified-working endpoints only. ──
 # distress = motivated-seller signal. Wrong IDs just 404 and are skipped.
@@ -57,6 +58,13 @@ SOURCES = [
     # ── Washington ──
     {"name": "Seattle Code Complaints", "city": "Seattle", "state": "WA", "distress": "code_violation",
      "url": "https://data.seattle.gov/resource/ez4a-iug7.json"},
+    # ── California ──
+    {"name": "SF Notices of Violation (Building)", "city": "San Francisco", "state": "CA",
+     "distress": "building_violation",
+     "url": "https://data.sfgov.org/resource/nbtm-fbw5.json"},
+    {"name": "SF Building Complaints", "city": "San Francisco", "state": "CA",
+     "distress": "building_complaint",
+     "url": "https://data.sfgov.org/resource/av5k-qvh8.json"},
 ]
 
 # ── ArcGIS FeatureServer sources. Many cities/counties (esp. Florida) publish
@@ -73,6 +81,9 @@ ARCGIS_SOURCES = [
     # NOTE: Broward + Hillsborough publish code data via ArcGIS *apps/dashboards*
     # (not queryable feature layers) — need the underlying FeatureServer layer URL.
     # TODO: add once the hosted layer URLs are confirmed.
+    # ── Ohio (Columbus BZS — updated nightly from Accela) ──
+    {"name": "Columbus Code Enforcement Cases", "city": "Columbus", "state": "OH",
+     "distress": "code_violation", "item": "1d61669223fa42ba87a4d73a46e5361a", "layer": 0},
     # ── Maryland (migrated off Socrata to ArcGIS) ──
     {"name": "Baltimore Vacant Building Notices", "city": "Baltimore", "state": "MD",
      "distress": "vacant",
@@ -127,26 +138,39 @@ def _build_address(rec: dict) -> Optional[str]:
 
 
 def _fetch(src: dict) -> list[dict]:
-    out = []
-    try:
-        r = httpx.get(src["url"], params={"$limit": LIMIT},
-                      headers={"User-Agent": UA, "Accept": "application/json"},
-                      timeout=30, follow_redirects=True)
-        if r.status_code >= 400:
-            print(f"  [OPENDATA] {src['name']}: HTTP {r.status_code} — skipping")
-            return []
-        data = r.json()
-        if not isinstance(data, list):
-            print(f"  [OPENDATA] {src['name']}: unexpected response")
-            return []
-        for rec in data:
-            if not isinstance(rec, dict):
+    """Page a Socrata dataset newest-first. Ordering by the :updated_at system
+    field surfaces the latest filings each day (so leads stay fresh as dedup
+    removes ones we already have); if a portal rejects the $order we retry
+    without it. Paged via $offset up to SOCRATA_CAP."""
+    out, offset, use_order = [], 0, True
+    hdrs = {"User-Agent": UA, "Accept": "application/json"}
+    while offset < SOCRATA_CAP:
+        params = {"$limit": LIMIT, "$offset": offset}
+        if use_order:
+            params["$order"] = ":updated_at DESC"
+        try:
+            r = httpx.get(src["url"], params=params, headers=hdrs,
+                          timeout=30, follow_redirects=True)
+            if r.status_code == 400 and use_order:
+                use_order = False          # this portal won't order — retry plain
                 continue
-            row = _record_from(rec, src)
-            if row:
-                out.append(row)
-    except Exception as e:
-        print(f"  [OPENDATA] {src['name']} error: {e}")
+            if r.status_code >= 400:
+                print(f"  [OPENDATA] {src['name']}: HTTP {r.status_code} — skipping")
+                break
+            data = r.json()
+            if not isinstance(data, list) or not data:
+                break
+            for rec in data:
+                if isinstance(rec, dict):
+                    row = _record_from(rec, src)
+                    if row:
+                        out.append(row)
+            if len(data) < LIMIT:
+                break
+            offset += LIMIT
+        except Exception as e:
+            print(f"  [OPENDATA] {src['name']} error: {e}")
+            break
     return out
 
 

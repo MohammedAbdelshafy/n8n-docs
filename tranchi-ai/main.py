@@ -179,11 +179,6 @@ def main():
         print(f"\n[OPENDATA] saved {r['saved']} distressed-property leads")
         return
 
-    if mode == "propwire-probe":
-        from src.scrapers.propwire_probe import run_propwire_probe
-        asyncio.run(run_propwire_probe())
-        return
-
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
