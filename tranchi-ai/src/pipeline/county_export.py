@@ -26,8 +26,23 @@ FIELDS = ["name", "property_address", "city", "state", "zip",
 PUBLIC_PREFIXES = ("OPEN_DATA", "COUNTY_RECORDS", "LIS_PENDENS")
 
 
+def _fetch_all_public() -> list[dict]:
+    """Page through seller_leads — Supabase caps a single select at 1000 rows,
+    so without paging the export silently drops everything past the first 1000."""
+    allrows, offset = [], 0
+    while True:
+        page = (_sb().table("seller_leads").select("*")
+                .eq("consent_given", False)
+                .range(offset, offset + 999).execute().data or [])
+        allrows.extend(page)
+        if len(page) < 1000:
+            break
+        offset += 1000
+    return allrows
+
+
 def export_county(states: Optional[list[str]] = None, out_path: str = None) -> str:
-    allrows = _sb().table("seller_leads").select("*").eq("consent_given", False).execute().data or []
+    allrows = _fetch_all_public()
     rows = [r for r in allrows if (r.get("source") or "").startswith(PUBLIC_PREFIXES)]
     if states:
         ss = [s.upper() for s in states]

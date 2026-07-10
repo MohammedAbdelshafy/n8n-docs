@@ -25,18 +25,26 @@ def export_seller_leads(
     out_path: str = None,
 ) -> str:
     """Export opt-in seller leads to CSV. Returns the file path."""
-    q = _sb().table("seller_leads") \
-        .select("*") \
-        .eq("consent_given", True) \
-        .eq("opt_out", False) \
-        .gte("lead_score", min_score)
+    # page through — Supabase caps a single select at 1000 rows
+    leads, offset = [], 0
+    while True:
+        q = _sb().table("seller_leads") \
+            .select("*") \
+            .eq("consent_given", True) \
+            .eq("opt_out", False) \
+            .gte("lead_score", min_score)
 
-    if state:
-        q = q.eq("state", state)
-    if status:
-        q = q.eq("status", status)
+        if state:
+            q = q.eq("state", state)
+        if status:
+            q = q.eq("status", status)
 
-    leads = (q.order("lead_score", desc=True).execute().data) or []
+        page = (q.order("lead_score", desc=True)
+                 .range(offset, offset + 999).execute().data) or []
+        leads.extend(page)
+        if len(page) < 1000:
+            break
+        offset += 1000
 
     if not leads:
         print("No exportable leads match the filter.")

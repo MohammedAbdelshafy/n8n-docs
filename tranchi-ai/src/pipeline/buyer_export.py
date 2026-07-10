@@ -35,12 +35,19 @@ EXPORT_FIELDS = [
 
 
 def export_buyers(states: Optional[list[str]] = None, out_path: str = None) -> str:
-    q = _sb().table("cash_buyers").select("*").eq("opt_in", True)
-    try:
-        q = q.eq("opt_out", False)
-    except Exception:
-        pass
-    rows = q.execute().data or []
+    # page through — Supabase caps a single select at 1000 rows
+    rows, offset = [], 0
+    while True:
+        q = _sb().table("cash_buyers").select("*").eq("opt_in", True)
+        try:
+            q = q.eq("opt_out", False)
+        except Exception:
+            pass
+        page = q.range(offset, offset + 999).execute().data or []
+        rows.extend(page)
+        if len(page) < 1000:
+            break
+        offset += 1000
 
     if states:
         rows = [r for r in rows if (r.get("state") or "").upper() in [s.upper() for s in states]]
