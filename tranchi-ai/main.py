@@ -46,7 +46,56 @@ from src.pipeline.deal_manager              import print_daily_report
 
 
 def main():
+    # The CI passes the whole mode as one quoted arg (e.g. "enrich FL"), so split
+    # it back out and rebuild argv — downstream state filters read sys.argv[2:].
+    raw = sys.argv[1] if len(sys.argv) > 1 else "all"
+    parts = raw.split()
+    sys.argv = [sys.argv[0]] + parts + sys.argv[2:]
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
+
+    if mode == "daily":
+        # Full money pipeline in one run. Each step is isolated so one failure
+        # surfaces loudly but doesn't abort the rest; exits non-zero only if
+        # every step failed (partial success still uploads its sheets).
+        results = {}
+
+        def _step(name, fn):
+            try:
+                fn()
+                results[name] = "OK"
+            except Exception as e:
+                results[name] = f"FAIL: {type(e).__name__}: {e}"
+                print(f"[DAILY] !! {name} FAILED: {e}")
+
+        def _opendata():
+            from src.scrapers.open_data_scraper import run_open_data_scraper
+            r = run_open_data_scraper()
+            print(f"[DAILY] opendata saved {r.get('saved', 0)} leads")
+
+        def _offers():
+            from src.pipeline.offer_builder import build_offers
+            r = build_offers()
+            print(f"[DAILY] offers matched {r.get('matched', 0)} | wrote {r.get('written', 0)}")
+
+        def _county():
+            from src.pipeline.county_export import export_county
+            export_county()
+
+        def _segment():
+            from src.pipeline.lead_segment import segment_leads
+            segment_leads()
+
+        _step("opendata", _opendata)
+        _step("offers", _offers)
+        _step("export-county", _county)
+        _step("segment", _segment)
+
+        print("\n[DAILY] ===== SUMMARY =====")
+        for k, v in results.items():
+            print(f"  {k}: {v}")
+        if results and all(v.startswith("FAIL") for v in results.values()):
+            sys.exit(1)   # every step failed -> fail the job loudly
+        return
 
     if mode == "webhook":
         import uvicorn

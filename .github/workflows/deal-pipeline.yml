@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Pipeline mode (all, scrape, underwrite, deal-hunt)"
+        description: "Pipeline mode (daily, opendata, offers, enrich, segment, export-county)"
         required: false
-        default: "all"
+        default: "daily"
 
 jobs:
   run-pipeline:
@@ -56,7 +56,7 @@ jobs:
           EMAIL_APP_PASSWORD:  ${{ secrets.EMAIL_APP_PASSWORD }}
           REPLY_TO_EMAIL:      ${{ secrets.REPLY_TO_EMAIL }}
           YOUR_TIMEZONE:       ${{ secrets.YOUR_TIMEZONE }}
-        run: python main.py "${{ github.event.inputs.mode || 'all' }}"
+        run: python main.py "${{ github.event.inputs.mode || 'daily' }}"
 
       - name: Upload CSV sheets
         if: always()
