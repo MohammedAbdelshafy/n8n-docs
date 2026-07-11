@@ -231,28 +231,36 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
     top = all_matched[:TOP_N]
     priced = sum(1 for m in all_matched if m["market_value"] > 0)
 
+    def _write(path, rows):
+        with open(path, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=OUT_FIELDS, extrasaction="ignore")
+            w.writeheader()
+            for i, m in enumerate(rows, 1):
+                mv = m["market_value"]
+                offer = (int(round(mv * (1 - DISCOUNT) / 500) * 500) if mv > 0
+                         else "CASH — CALL FOR OFFER")
+                w.writerow({**m, "rank": i,
+                            "market_value": int(mv) if mv > 0 else "",
+                            "offer_price": offer})
+
     out = f"offer_package_top{TOP_N}_{date.today()}.csv"
-    with open(out, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=OUT_FIELDS, extrasaction="ignore")
-        w.writeheader()
-        for i, m in enumerate(top, 1):
-            mv = m["market_value"]
-            offer = (int(round(mv * (1 - DISCOUNT) / 500) * 500) if mv > 0
-                     else "CASH — CALL FOR OFFER")
-            w.writerow({**m, "rank": i,
-                        "market_value": int(mv) if mv > 0 else "",
-                        "offer_price": offer})
+    _write(out, top)
+    # full mail-merge file — every matched owner, for a full mailing campaign
+    full = f"offer_package_ALL_{date.today()}.csv"
+    _write(full, all_matched)
 
     print("=" * 60)
     print(f"  OFFER PACKAGE — {date.today()}")
     print(f"  matched w/ owner+mailing: {len(all_matched):,} | with value: {priced:,}")
     print(f"  wrote top {len(top)} -> {out}")
+    print(f"  wrote ALL {len(all_matched):,} -> {full}")
     if top:
         t = top[0]
         print(f"  #1: {t['owner_name']} | {t['property_address']} ({t['motivation']}) "
               f"| mail-> {t['mailing_address']}")
     print("=" * 60)
-    return {"matched": len(all_matched), "priced": priced, "written": len(top), "file": out}
+    return {"matched": len(all_matched), "priced": priced,
+            "written": len(top), "file": out, "full": full}
 
 
 if __name__ == "__main__":
