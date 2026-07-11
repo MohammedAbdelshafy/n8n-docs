@@ -139,12 +139,14 @@ def _match_parcels(url: str, det: dict, norm_addrs: list[str]) -> dict:
             continue
         vals = ",".join("'" + a.replace("'", "''") + "'" for a in chunk)
         try:
-            r = httpx.get(f"{url}/query",
-                          params={"where": f"{det['addr']} IN ({vals})",
-                                  "outFields": out_fields, "returnGeometry": "false",
-                                  "f": "json"},
-                          headers={"User-Agent": UA, "Accept": "application/json"},
-                          timeout=50, follow_redirects=True)
+            # POST (form-encoded) — a GET puts all addresses in the URL, which
+            # overflows the server's max URL length and 404s. POST has no limit.
+            r = httpx.post(f"{url}/query",
+                           data={"where": f"{det['addr']} IN ({vals})",
+                                 "outFields": out_fields, "returnGeometry": "false",
+                                 "f": "json"},
+                           headers={"User-Agent": UA, "Accept": "application/json"},
+                           timeout=50, follow_redirects=True)
             if r.status_code >= 400:
                 print(f"  [OFFERS] match HTTP {r.status_code} (batch {i//MATCH_BATCH})")
                 continue
@@ -198,11 +200,6 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
         by_norm = defaultdict(list)
         for r in leads:
             by_norm[_norm(r["property_address"])].append(r)
-
-        # DIAGNOSTIC: show how OUR stored addresses look vs the parcel format
-        print("  [OFFERS] sample stored lead addresses (raw -> normalized):")
-        for r in leads[:15]:
-            print(f"      {r['property_address']!r} -> {_norm(r['property_address'])!r}")
         parcels = _match_parcels(url, det, list(by_norm.keys()))
         print(f"  [OFFERS] matched {len(parcels):,} parcels with owners")
 
