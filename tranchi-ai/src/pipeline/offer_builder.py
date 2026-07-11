@@ -198,6 +198,11 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
         by_norm = defaultdict(list)
         for r in leads:
             by_norm[_norm(r["property_address"])].append(r)
+
+        # DIAGNOSTIC: show how OUR stored addresses look vs the parcel format
+        print("  [OFFERS] sample stored lead addresses (raw -> normalized):")
+        for r in leads[:15]:
+            print(f"      {r['property_address']!r} -> {_norm(r['property_address'])!r}")
         parcels = _match_parcels(url, det, list(by_norm.keys()))
         print(f"  [OFFERS] matched {len(parcels):,} parcels with owners")
 
