@@ -184,6 +184,13 @@ def main():
         segment_leads()
         return
 
+    if mode == "enrich":
+        from src.scrapers.parcel_enrich import run_parcel_enrich
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        r = run_parcel_enrich(states=states)
+        print(f"\n[ENRICH] {r['updated']} owner names added from parcel records")
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
