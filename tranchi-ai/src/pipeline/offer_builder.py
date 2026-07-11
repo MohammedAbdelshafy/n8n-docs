@@ -122,63 +122,50 @@ def _resolve_parcel(src: dict) -> Optional[tuple]:
     return None
 
 
-def _pull_parcels(url: str, det: dict, zips: list[str]) -> dict:
-    """Bulk-pull parcels (filtered by zip when we have them), keyed by
-    normalized situs address -> {owner, mailing, value}."""
+MATCH_BATCH = 100        # normalized addresses per IN() query
+
+
+def _match_parcels(url: str, det: dict, norm_addrs: list[str]) -> dict:
+    """Query the parcel layer in batches by NORMALIZED situs address (the format
+    the parcel feed already uses — '16 SE 2 ST'), keyed norm_addr ->
+    {owner, mailing, value}. Avoids needing zips or a full-county pull."""
     out_fields = ",".join([f for f in (
         det["addr"], det["owner"], det["mail"], det["mcity"],
-        det["mstate"], det["mzip"], det["value"], det["zip"]) if f])
-
-    # build where: zip filter if we have zips + a zip field, else all
-    where = "1=1"
-    if zips and det["zip"]:
-        # quote values; ArcGIS accepts quoted even for numeric fields on most servers
-        vals = ",".join("'" + z + "'" for z in zips)
-        where = f"{det['zip']} IN ({vals})"
-
-    parcels, offset, sampled = {}, 0, 0
-    while offset < PARCEL_CAP:
+        det["mstate"], det["mzip"], det.get("value")) if f])
+    parcels, sampled = {}, 0
+    for i in range(0, len(norm_addrs), MATCH_BATCH):
+        chunk = [a for a in norm_addrs[i:i + MATCH_BATCH] if a]
+        if not chunk:
+            continue
+        vals = ",".join("'" + a.replace("'", "''") + "'" for a in chunk)
         try:
             r = httpx.get(f"{url}/query",
-                          params={"where": where, "outFields": out_fields,
-                                  "returnGeometry": "false", "resultRecordCount": PARCEL_PAGE,
-                                  "resultOffset": offset, "f": "json"},
+                          params={"where": f"{det['addr']} IN ({vals})",
+                                  "outFields": out_fields, "returnGeometry": "false",
+                                  "f": "json"},
                           headers={"User-Agent": UA, "Accept": "application/json"},
-                          timeout=60, follow_redirects=True)
-            if r.status_code == 400 and where != "1=1":
-                print(f"  [OFFERS] zip filter rejected — retrying unquoted")
-                vals = ",".join(z for z in zips)
-                where = f"{det['zip']} IN ({vals})"
-                continue
+                          timeout=50, follow_redirects=True)
             if r.status_code >= 400:
-                print(f"  [OFFERS] parcel HTTP {r.status_code} at offset {offset}")
-                break
-            data = r.json()
-            feats = data.get("features") if isinstance(data, dict) else None
-            if not feats:
-                break
-            for f in feats:
+                print(f"  [OFFERS] match HTTP {r.status_code} (batch {i//MATCH_BATCH})")
+                continue
+            for f in (r.json() or {}).get("features", []) or []:
                 at = f.get("attributes") or {}
                 na = _norm(at.get(det["addr"]))
                 if not na:
                     continue
                 owner = str(at.get(det["owner"]) or "").strip()
-                mail = " ".join(str(at.get(det[k]) or "").strip()
-                                for k in ("mail", "mcity", "mstate", "mzip") if det.get(k)).strip()
-                mail = re.sub(r"\s+", " ", mail)
+                mail = re.sub(r"\s+", " ", " ".join(
+                    str(at.get(det[k]) or "").strip()
+                    for k in ("mail", "mcity", "mstate", "mzip") if det.get(k)).strip())
                 val = _money(at.get(det["value"])) if det.get("value") else 0.0
                 if sampled < 3:
-                    print(f"  [OFFERS] sample parcel: addr={at.get(det['addr'])!r} "
+                    print(f"  [OFFERS] sample match: addr={at.get(det['addr'])!r} "
                           f"owner={owner!r} mail={mail!r} value={val}")
                     sampled += 1
                 if owner:
                     parcels[na] = {"owner": owner, "mailing": mail, "value": val}
-            if len(feats) < PARCEL_PAGE or not data.get("exceededTransferLimit"):
-                break
-            offset += PARCEL_PAGE
         except Exception as e:
-            print(f"  [OFFERS] parcel pull error at {offset}: {e}")
-            break
+            print(f"  [OFFERS] match error (batch {i//MATCH_BATCH}): {e}")
     return parcels
 
 
@@ -206,19 +193,19 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
             continue
         url, det = resolved
 
-        parcels = _pull_parcels(url, det, zips)
-        print(f"  [OFFERS] pulled {len(parcels):,} parcels with owners")
-
-        # join
+        # match by normalized situs address in batches (parcel feed is already
+        # ordinal-stripped like '16 SE 2 ST', which is what _norm produces)
         by_norm = defaultdict(list)
         for r in leads:
             by_norm[_norm(r["property_address"])].append(r)
+        parcels = _match_parcels(url, det, list(by_norm.keys()))
+        print(f"  [OFFERS] matched {len(parcels):,} parcels with owners")
+
         matched = 0
         for na, pdata in parcels.items():
             for r in by_norm.get(na, []):
-                mot = _motivation(r.get("reason"))
                 all_matched.append({
-                    "motivation": mot,
+                    "motivation": _motivation(r.get("reason")),
                     "owner_name": pdata["owner"],
                     "mailing_address": pdata["mailing"],
                     "property_address": r["property_address"],
@@ -235,32 +222,35 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
         print("\n[OFFERS] 0 matched — no offer package produced.")
         return {"matched": 0, "written": 0}
 
-    # rank: vacant first, then highest value; only rows we can price
-    priced = [m for m in all_matched if m["market_value"] > 0]
+    # rank: vacant (HOT) first, then by value when we have it. Value is optional —
+    # a yellow-letter offer works without a printed price ("cash, call for offer").
     order = {"HOT": 0, "WARM": 1, "COOL": 2}
-    priced.sort(key=lambda m: (order.get(m["motivation"], 1), -m["market_value"]))
-    top = priced[:TOP_N]
+    all_matched.sort(key=lambda m: (order.get(m["motivation"], 1), -m["market_value"]))
+    top = all_matched[:TOP_N]
+    priced = sum(1 for m in all_matched if m["market_value"] > 0)
 
     out = f"offer_package_top{TOP_N}_{date.today()}.csv"
     with open(out, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=OUT_FIELDS, extrasaction="ignore")
         w.writeheader()
         for i, m in enumerate(top, 1):
-            offer = round(m["market_value"] * (1 - DISCOUNT) / 500) * 500
+            mv = m["market_value"]
+            offer = (int(round(mv * (1 - DISCOUNT) / 500) * 500) if mv > 0
+                     else "CASH — CALL FOR OFFER")
             w.writerow({**m, "rank": i,
-                        "market_value": int(m["market_value"]),
-                        "offer_price": int(offer)})
+                        "market_value": int(mv) if mv > 0 else "",
+                        "offer_price": offer})
 
     print("=" * 60)
     print(f"  OFFER PACKAGE — {date.today()}")
-    print(f"  matched w/ owner: {len(all_matched):,} | priced (value>0): {len(priced):,}")
-    print(f"  wrote top {len(top)} -> {out}  (offer = {int(DISCOUNT*100)}% under value)")
+    print(f"  matched w/ owner+mailing: {len(all_matched):,} | with value: {priced:,}")
+    print(f"  wrote top {len(top)} -> {out}")
     if top:
-        print(f"  #1: {top[0]['owner_name']} | {top[0]['property_address']} | "
-              f"value ${int(top[0]['market_value']):,} | "
-              f"offer ${int(round(top[0]['market_value']*(1-DISCOUNT)/500)*500):,}")
+        t = top[0]
+        print(f"  #1: {t['owner_name']} | {t['property_address']} ({t['motivation']}) "
+              f"| mail-> {t['mailing_address']}")
     print("=" * 60)
-    return {"matched": len(all_matched), "priced": len(priced), "written": len(top), "file": out}
+    return {"matched": len(all_matched), "priced": priced, "written": len(top), "file": out}
 
 
 if __name__ == "__main__":
