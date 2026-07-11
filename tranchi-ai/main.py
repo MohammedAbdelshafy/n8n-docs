@@ -191,6 +191,13 @@ def main():
         print(f"\n[ENRICH] {r['updated']} owner names added from parcel records")
         return
 
+    if mode == "offers":
+        from src.pipeline.offer_builder import build_offers
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        r = build_offers(states=states)
+        print(f"\n[OFFERS] matched {r.get('matched',0)} | wrote top {r.get('written',0)}")
+        return
+
     if mode == "fb-post":
         from src.outreach.facebook_groups import run_facebook_post_generator
         post_type = sys.argv[2] if len(sys.argv) > 2 else "buyers"
