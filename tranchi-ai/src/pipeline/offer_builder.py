@@ -57,6 +57,14 @@ OUT_FIELDS = ["rank", "motivation", "owner_name", "mailing_address",
               "property_address", "city", "state", "zip", "reason",
               "market_value", "offer_price", "source"]
 
+# FREE value source (replaces paid comps tools like Privy): the Miami-Dade
+# Property Appraiser "Property Point View" — every property with just/assessed
+# value, keyed by situs address. Matched by address, same as the owner layer.
+VALUE_SOURCES = {
+    "FL": {"name": "Miami-Dade Property Point View",
+           "item": "bf92e51f90a8426cae904ebc15018067", "layer": 0},
+}
+
 
 def _fetch_fl_leads(state: str) -> list[dict]:
     rows, offset = [], 0
@@ -171,6 +179,61 @@ def _match_parcels(url: str, det: dict, norm_addrs: list[str]) -> dict:
     return parcels
 
 
+def _resolve_value_layer(vsrc: dict) -> Optional[tuple]:
+    """Return (url, addr_field, value_field) for a value layer; auto-detect fields."""
+    for url in _candidate_urls(vsrc):
+        try:
+            meta = httpx.get(url, params={"f": "json"},
+                             headers={"User-Agent": UA, "Accept": "application/json"},
+                             timeout=30, follow_redirects=True).json()
+        except Exception as e:
+            print(f"  [OFFERS] value meta error {url}: {e}")
+            continue
+        fields = (meta or {}).get("fields")
+        if not fields:
+            continue
+        names = [f.get("name") for f in fields if f.get("name")]
+        addr = _pick_field(names, _ADDR_TOKENS)
+        val = _pick_field(names, _VALUE_TOKENS)
+        print(f"  [OFFERS] value layer {url} | addr={addr} value={val}")
+        if addr and val:
+            return url, addr, val
+        print(f"  [OFFERS] value layer missing addr/value in {names[:30]}")
+    return None
+
+
+def _match_values(url: str, addr_field: str, value_field: str,
+                  norm_addrs: list[str]) -> dict:
+    """norm_addr -> market value, via batched POST (same as owner matching)."""
+    out, sampled = {}, 0
+    for i in range(0, len(norm_addrs), MATCH_BATCH):
+        chunk = [a for a in norm_addrs[i:i + MATCH_BATCH] if a]
+        if not chunk:
+            continue
+        vals = ",".join("'" + a.replace("'", "''") + "'" for a in chunk)
+        try:
+            r = httpx.post(f"{url}/query",
+                           data={"where": f"{addr_field} IN ({vals})",
+                                 "outFields": f"{addr_field},{value_field}",
+                                 "returnGeometry": "false", "f": "json"},
+                           headers={"User-Agent": UA, "Accept": "application/json"},
+                           timeout=50, follow_redirects=True)
+            if r.status_code >= 400:
+                continue
+            for f in (r.json() or {}).get("features", []) or []:
+                at = f.get("attributes") or {}
+                na = _norm(at.get(addr_field))
+                v = _money(at.get(value_field))
+                if na and v > 0:
+                    out[na] = v
+                    if sampled < 3:
+                        print(f"  [OFFERS] sample value: {at.get(addr_field)!r} -> ${int(v):,}")
+                        sampled += 1
+        except Exception as e:
+            print(f"  [OFFERS] value match error (batch {i//MATCH_BATCH}): {e}")
+    return out
+
+
 def build_offers(states: Optional[list[str]] = None) -> dict:
     srcs = PARCEL_SOURCES
     if states:
@@ -203,8 +266,19 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
         parcels = _match_parcels(url, det, list(by_norm.keys()))
         print(f"  [OFFERS] matched {len(parcels):,} parcels with owners")
 
+        # FREE value enrichment: if the owner layer has no value field, pull
+        # just/assessed value from the county Property Appraiser layer by address.
+        values = {}
+        if not det.get("value") and src["state"] in VALUE_SOURCES:
+            vres = _resolve_value_layer(VALUE_SOURCES[src["state"]])
+            if vres:
+                vurl, vaddr, vfield = vres
+                values = _match_values(vurl, vaddr, vfield, list(parcels.keys()))
+                print(f"  [OFFERS] enriched {len(values):,} parcels with a value")
+
         matched = 0
         for na, pdata in parcels.items():
+            mv = pdata["value"] or values.get(na, 0.0)
             for r in by_norm.get(na, []):
                 all_matched.append({
                     "motivation": _motivation(r.get("reason")),
@@ -213,7 +287,7 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
                     "property_address": r["property_address"],
                     "city": r.get("city", ""), "state": r.get("state", ""),
                     "zip": r.get("zip", ""), "reason": r.get("reason", ""),
-                    "market_value": pdata["value"],
+                    "market_value": mv,
                     "source": r.get("source", ""),
                 })
                 matched += 1
