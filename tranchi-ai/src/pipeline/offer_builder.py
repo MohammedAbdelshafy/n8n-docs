@@ -356,6 +356,29 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
     print(f"  wrote top {len(top)} -> {out}")
     print(f"  wrote ALL {len(all_matched):,} -> {full}")
     print(f"  wrote masked teaser (50 rows) -> {teaser}")
+
+    # BUYER prospects: an owner on 3+ distressed properties is an active
+    # investor/landlord = a cash buyer to sell the packs to (and to assign
+    # contracts to). We already have their mailing address.
+    from collections import Counter as _C
+    prop_by_owner: dict = defaultdict(set)
+    mail_by_owner: dict = {}
+    for m in all_matched:
+        o = (m["owner_name"] or "").strip().upper()
+        if not o or o in {"OWNER OF RECORD", ""}:
+            continue
+        prop_by_owner[o].add(m["property_address"])
+        mail_by_owner.setdefault(o, m["mailing_address"])
+    buyers = sorted(((o, len(p)) for o, p in prop_by_owner.items() if len(p) >= 3),
+                    key=lambda x: -x[1])
+    if buyers:
+        bpath = f"buyer_prospects_{date.today()}.csv"
+        with open(bpath, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["owner_name", "mailing_address", "num_distressed_properties"])
+            for o, n in buyers:
+                w.writerow([o, mail_by_owner.get(o, ""), n])
+        print(f"  wrote {len(buyers):,} cash-buyer prospects (3+ props) -> {bpath}")
     if top:
         t = top[0]
         print(f"  #1: {t['owner_name']} | {t['property_address']} ({t['motivation']}) "
