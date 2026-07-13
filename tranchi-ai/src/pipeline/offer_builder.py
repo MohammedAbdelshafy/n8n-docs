@@ -323,11 +323,39 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
     full = f"offer_package_ALL_{date.today()}.csv"
     _write(full, all_matched)
 
+    # masked TEASER — proof of quality to send a buyer before they pay. Real
+    # city/zip/value/reason (shows it's legit), owner name + house number masked
+    # and mailing address dropped (so the rows aren't usable until purchased).
+    def _mask_name(n):
+        parts = (n or "").split()
+        return " ".join(p[0] + "***" for p in parts[:3]) if parts else "————"
+
+    def _mask_addr(a):
+        return re.sub(r"^\d+", lambda m: "X" * len(m.group()), a or "")
+
+    teaser = f"teaser_sample_{date.today()}.csv"
+    tfields = ["motivation", "owner_name", "property_address", "city", "state",
+               "zip", "reason", "market_value", "offer_price"]
+    with open(teaser, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=tfields, extrasaction="ignore")
+        w.writeheader()
+        for m in top[:50]:
+            mv = m["market_value"]
+            offer = (int(round(mv * (1 - DISCOUNT) / 500) * 500) if mv > 0 else "CALL")
+            w.writerow({"motivation": m["motivation"],
+                        "owner_name": _mask_name(m["owner_name"]),
+                        "property_address": _mask_addr(m["property_address"]),
+                        "city": m["city"], "state": m["state"], "zip": m["zip"],
+                        "reason": m["reason"],
+                        "market_value": int(mv) if mv > 0 else "",
+                        "offer_price": offer})
+
     print("=" * 60)
     print(f"  OFFER PACKAGE — {date.today()}")
     print(f"  matched w/ owner+mailing: {len(all_matched):,} | with value: {priced:,}")
     print(f"  wrote top {len(top)} -> {out}")
     print(f"  wrote ALL {len(all_matched):,} -> {full}")
+    print(f"  wrote masked teaser (50 rows) -> {teaser}")
     if top:
         t = top[0]
         print(f"  #1: {t['owner_name']} | {t['property_address']} ({t['motivation']}) "
