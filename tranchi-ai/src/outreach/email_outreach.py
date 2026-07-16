@@ -42,6 +42,13 @@ def send_email(to: str, subject: str, html: str, from_name: str = "Hola AI") -> 
         print(f"[EMAIL] Not configured — set EMAIL_ADDRESS + EMAIL_APP_PASSWORD in .env")
         return False
 
+    # Deliverability gate: skip obvious bounces (dead domains, junk, artifacts)
+    # so we don't torch the sender's reputation on undeliverable addresses.
+    from src.outreach.email_validate import is_deliverable
+    if not is_deliverable(to):
+        print(f"[EMAIL] SKIP undeliverable: {to}")
+        return False
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = f"{from_name} <{EMAIL_ADDRESS}>"
