@@ -69,10 +69,13 @@ def _enrich_from_site(url: str) -> tuple[Optional[str], Optional[str]]:
         r = httpx.get(url, timeout=12, follow_redirects=True,
                       headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126 Safari/537.36"})
         html = r.text
+        from src.outreach.email_validate import clean_email
         email = None
-        m = _EMAIL_RE.search(html)
-        if m and not m.group(0).lower().endswith((".png", ".jpg", ".gif", ".webp")):
-            email = m.group(0).lower()
+        for m in _EMAIL_RE.finditer(html):
+            good = clean_email(m.group(0))   # keep the first deliverable one
+            if good:
+                email = good
+                break
         fb = None
         fm = _FB_RE.search(html)
         if fm:

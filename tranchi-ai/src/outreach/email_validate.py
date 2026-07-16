@@ -54,3 +54,10 @@ def is_deliverable(email: str) -> bool:
     if domain in _JUNK_DOMAIN:
         return False
     return _domain_resolves(domain)
+
+
+def clean_email(email):
+    """Return the normalized email if deliverable, else None — so scrapers store
+    only good addresses instead of saving garbage that bounces later."""
+    e = (email or "").strip().lower()
+    return e if is_deliverable(e) else None
