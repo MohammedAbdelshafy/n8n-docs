@@ -397,15 +397,22 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
     # deals with a real value. NOTE: value is the county ASSESSED value (often
     # below true market) and there's no repair estimate — treat as leads to
     # verify with real comps, not confirmed profit.
-    MIN_SPREAD = 50000
-    valued = [m for m in all_matched if m["market_value"] > 0]
-    for m in valued:
-        m["_spread"] = int(round(m["market_value"] * DISCOUNT))
-    valued.sort(key=lambda m: (0 if m["motivation"] == "HOT" else 1, -m["_spread"]))
-    hot = [m for m in valued if m["_spread"] >= MIN_SPREAD][:50] or valued[:25]
+    # Rank the call list even when values are missing: vacant (HOT) first, then
+    # ABSENTEE owners (mailing address != property = lives elsewhere = motivated),
+    # then by spread when we have a value.
+    def _absentee(m):
+        pa = _norm(m.get("property_address"))
+        ma = _norm(m.get("mailing_address"))
+        return 0 if (pa and pa in ma) else 1     # 1 = absentee, ranked first
+    for m in all_matched:
+        m["_spread"] = int(round(m["market_value"] * DISCOUNT)) if m["market_value"] > 0 else 0
+        m["_abs"] = _absentee(m)
+    ranked = sorted(all_matched, key=lambda m: (0 if m["motivation"] == "HOT" else 1,
+                                                0 if m["_abs"] else 1, -m["_spread"]))
+    hot = ranked[:50]
     if hot:
         hpath = f"hot_deals_call_list_{date.today()}.csv"
-        hfields = ["rank", "motivation", "owner_name", "mailing_address",
+        hfields = ["rank", "motivation", "absentee", "owner_name", "mailing_address",
                    "property_address", "city", "zip", "reason",
                    "assessed_value", "est_offer_25pct_under", "est_gross_spread"]
         with open(hpath, "w", newline="") as f:
@@ -414,20 +421,23 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
             for i, m in enumerate(hot, 1):
                 v = m["market_value"]
                 w.writerow({"rank": i, "motivation": m["motivation"],
+                            "absentee": "YES" if m["_abs"] else "no",
                             "owner_name": m["owner_name"],
                             "mailing_address": m["mailing_address"],
                             "property_address": m["property_address"],
                             "city": m["city"], "zip": m["zip"], "reason": m["reason"],
-                            "assessed_value": int(v),
-                            "est_offer_25pct_under": int(round(v * (1 - DISCOUNT) / 500) * 500),
-                            "est_gross_spread": m["_spread"]})
-        print(f"  wrote {len(hot)} HOT DEALS (spread>=${MIN_SPREAD:,}) -> {hpath}")
+                            "assessed_value": int(v) if v > 0 else "",
+                            "est_offer_25pct_under": int(round(v * (1 - DISCOUNT) / 500) * 500) if v > 0 else "",
+                            "est_gross_spread": m["_spread"] if v > 0 else ""})
+        print(f"  wrote {len(hot)} priority deals -> {hpath}")
         # print the top 10 so the user gets the actual list (CSV isn't visible in logs)
         print("  ---- TOP 10 DEALS TO CALL ----")
         for i, m in enumerate(hot[:10], 1):
+            val = f"${int(m['market_value']):,}" if m["market_value"] > 0 else "n/a"
+            abs_tag = "ABSENTEE" if m["_abs"] else "owner-occ"
             print(f"  {i}. {m['owner_name']} | {m['property_address']}, {m['city']} {m['zip']} "
-                  f"| {m['motivation']} {m['reason']} | assessed ${int(m['market_value']):,} "
-                  f"| spread ~${m['_spread']:,} | mail-> {m['mailing_address']}")
+                  f"| {m['motivation']}/{abs_tag} {m['reason']} | assessed {val} "
+                  f"| mail-> {m['mailing_address']}")
         # honest free skip-trace PROBE on the top individual owners
         _skiptrace_probe(hot[:6])
 
