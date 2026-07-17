@@ -350,6 +350,37 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
                         "market_value": int(mv) if mv > 0 else "",
                         "offer_price": offer})
 
+    # HOT DEALS — the biggest-spread targets worth a phone call. Estimated gross
+    # spread = value * DISCOUNT (buy 25% under, resell near value). Ranked; only
+    # deals with a real value. NOTE: value is the county ASSESSED value (often
+    # below true market) and there's no repair estimate — treat as leads to
+    # verify with real comps, not confirmed profit.
+    MIN_SPREAD = 50000
+    valued = [m for m in all_matched if m["market_value"] > 0]
+    for m in valued:
+        m["_spread"] = int(round(m["market_value"] * DISCOUNT))
+    valued.sort(key=lambda m: (0 if m["motivation"] == "HOT" else 1, -m["_spread"]))
+    hot = [m for m in valued if m["_spread"] >= MIN_SPREAD][:50] or valued[:25]
+    if hot:
+        hpath = f"hot_deals_call_list_{date.today()}.csv"
+        hfields = ["rank", "motivation", "owner_name", "mailing_address",
+                   "property_address", "city", "zip", "reason",
+                   "assessed_value", "est_offer_25pct_under", "est_gross_spread"]
+        with open(hpath, "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=hfields, extrasaction="ignore")
+            w.writeheader()
+            for i, m in enumerate(hot, 1):
+                v = m["market_value"]
+                w.writerow({"rank": i, "motivation": m["motivation"],
+                            "owner_name": m["owner_name"],
+                            "mailing_address": m["mailing_address"],
+                            "property_address": m["property_address"],
+                            "city": m["city"], "zip": m["zip"], "reason": m["reason"],
+                            "assessed_value": int(v),
+                            "est_offer_25pct_under": int(round(v * (1 - DISCOUNT) / 500) * 500),
+                            "est_gross_spread": m["_spread"]})
+        print(f"  wrote {len(hot)} HOT DEALS (spread>=${MIN_SPREAD:,}) -> {hpath}")
+
     print("=" * 60)
     print(f"  OFFER PACKAGE — {date.today()}")
     print(f"  matched w/ owner+mailing: {len(all_matched):,} | with value: {priced:,}")

@@ -19,6 +19,10 @@ import socket
 _SYNTAX = re.compile(r"^[a-z0-9._%+\-]+@([a-z0-9\-]+\.)+[a-z]{2,}$", re.I)
 _JUNK_LOCAL = ("noreply", "no-reply", "donotreply", "do-not-reply", "postmaster",
                "abuse", "mailer-daemon", "example", "test", "you@", "email@")
+# Generic role inboxes — low-value, rarely read by a decision-maker. Dropped.
+_ROLE_LOCAL = {"info", "contact", "sales", "admin", "support", "hello", "hi",
+               "office", "team", "help", "mail", "marketing", "enquiries",
+               "inquiries", "webmaster", "service", "customerservice"}
 _JUNK_DOMAIN = {"example.com", "example.org", "test.com", "email.com", "domain.com",
                 "yourdomain.com", "sentry.io", "wixpress.com", "sentry-next.wixpress.com",
                 "godaddy.com", "wix.com", "squarespace.com"}
@@ -50,6 +54,8 @@ def is_deliverable(email: str) -> bool:
         return False
     local, _, domain = e.partition("@")
     if any(local.startswith(j) for j in _JUNK_LOCAL):
+        return False
+    if local in _ROLE_LOCAL:            # drop generic info@/contact@/sales@ ...
         return False
     if domain in _JUNK_DOMAIN:
         return False
