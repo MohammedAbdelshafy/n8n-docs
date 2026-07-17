@@ -9,8 +9,14 @@ let them pick the channel. Same message, three formats below.
 > you skip-traced is **TCPA-regulated** — mail first is the safe opener; once they
 > respond you can call/Meet/WhatsApp freely.
 
-Set up once (free): a **Google Meet booking link** — Google Calendar → Appointment
-schedule (or Calendly free) → paste the link where it says `[MEET LINK]`.
+Set up once (free): a **booking / video link** — pick whichever is easiest and
+paste it wherever you see `[MEET LINK]`:
+- **Zoom** (free Personal Meeting Room) → zoom.us → your PMR link
+- **Google Meet** → Google Calendar → Appointment schedule
+- **Calendly** (free) → a "15-min call" event so they pick a time themselves
+Best option for cold sellers: a **plain phone call** first — most motivated
+homeowners won't click a video link cold. Offer the call, keep Zoom/Meet as the
+"if you prefer" backup.
 
 ---
 
@@ -30,7 +36,7 @@ minutes, whichever way is easiest for you:
 
   📞 Call or text me: **[YOUR PHONE]**
   💬 WhatsApp: **[YOUR WHATSAPP NUMBER]**
-  🎥 Or book a quick video call: **[MEET LINK]**
+  🎥 Or a quick 10-min Zoom/Google Meet: **[MEET LINK]**
 
 No pressure and no obligation. If you'd rather I not contact you again, just let
 me know and I'll remove your address.
