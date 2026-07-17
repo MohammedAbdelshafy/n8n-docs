@@ -234,6 +234,48 @@ def _match_values(url: str, addr_field: str, value_field: str,
     return out
 
 
+_PHONE_RE = re.compile(r"\(?\b\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")
+_ENTITY = re.compile(r"\b(LLC|INC|CORP|TRUST|CO|LP|LTD|PROPERTIES|HOLDINGS|"
+                     r"ENTERP|BANK|ASSOC|PARTNERS|GROUP)\b", re.I)
+
+
+def _skiptrace_probe(deals: list[dict]) -> None:
+    """Honest, bounded attempt to get a phone free. Individuals only (LLCs need
+    SunBiz, not people-search). These sites bot-wall datacenter IPs, so this
+    mostly tells us definitively whether free auto skip-trace is even possible."""
+    print("  ---- SKIP-TRACE PROBE (free) ----")
+    tried = 0
+    for m in deals:
+        name = (m.get("owner_name") or "").strip()
+        if _ENTITY.search(name):
+            print(f"  [SKIPTRACE] {name}: entity-owned -> needs SunBiz, skipping people-search")
+            continue
+        parts = [p for p in re.sub(r"[^A-Za-z ]", "", name).split() if len(p) > 1]
+        if len(parts) < 2:
+            continue
+        first, last = parts[0], parts[-1]
+        city = (m.get("city") or "").replace(" ", "-")
+        url = f"https://www.fastpeoplesearch.com/name/{first}-{last}_{city}-FL".lower()
+        tried += 1
+        try:
+            r = httpx.get(url, timeout=15, follow_redirects=True,
+                          headers={"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                                  "Chrome/126 Safari/537.36")})
+            phones = _PHONE_RE.findall(r.text) if r.status_code == 200 else []
+            if phones:
+                print(f"  [SKIPTRACE] {first} {last} ({city}): {r.status_code} -> {phones[:3]}")
+            else:
+                print(f"  [SKIPTRACE] {first} {last} ({city}): HTTP {r.status_code}, no phone "
+                      f"(len {len(r.text)}) — likely blocked/captcha")
+        except Exception as e:
+            print(f"  [SKIPTRACE] {first} {last}: error {type(e).__name__}: {e}")
+        if tried >= 4:
+            break
+    if not tried:
+        print("  [SKIPTRACE] top deals are all entity-owned — free people-search N/A")
+
+
 def build_offers(states: Optional[list[str]] = None) -> dict:
     srcs = PARCEL_SOURCES
     if states:
@@ -380,6 +422,14 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
                             "est_offer_25pct_under": int(round(v * (1 - DISCOUNT) / 500) * 500),
                             "est_gross_spread": m["_spread"]})
         print(f"  wrote {len(hot)} HOT DEALS (spread>=${MIN_SPREAD:,}) -> {hpath}")
+        # print the top 10 so the user gets the actual list (CSV isn't visible in logs)
+        print("  ---- TOP 10 DEALS TO CALL ----")
+        for i, m in enumerate(hot[:10], 1):
+            print(f"  {i}. {m['owner_name']} | {m['property_address']}, {m['city']} {m['zip']} "
+                  f"| {m['motivation']} {m['reason']} | assessed ${int(m['market_value']):,} "
+                  f"| spread ~${m['_spread']:,} | mail-> {m['mailing_address']}")
+        # honest free skip-trace PROBE on the top individual owners
+        _skiptrace_probe(hot[:6])
 
     print("=" * 60)
     print(f"  OFFER PACKAGE — {date.today()}")
