@@ -21,6 +21,8 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write          # allow committing outputs back to the repo
     defaults:
       run:
         working-directory: tranchi-ai
@@ -65,3 +67,22 @@ jobs:
           name: lead-sheets
           path: tranchi-ai/*.csv
           if-no-files-found: ignore
+
+      # Persist every output into the repo so nothing is ever lost to artifact
+      # expiry — permanent, directly downloadable from GitHub (raw file links).
+      - name: Persist outputs to repo (never deleted)
+        if: always()
+        continue-on-error: true
+        working-directory: ${{ github.workspace }}
+        run: |
+          shopt -s nullglob
+          csvs=(tranchi-ai/*.csv)
+          if [ ${#csvs[@]} -eq 0 ]; then echo "no CSVs to persist"; exit 0; fi
+          mkdir -p tranchi-ai/outputs
+          cp tranchi-ai/*.csv tranchi-ai/outputs/
+          git config user.name  "hola-ai-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tranchi-ai/outputs
+          git commit -m "data: pipeline outputs $(date -u +%FT%TZ) [skip ci]" || { echo "nothing new"; exit 0; }
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}"
