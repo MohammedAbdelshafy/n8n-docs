@@ -239,41 +239,41 @@ _ENTITY = re.compile(r"\b(LLC|INC|CORP|TRUST|CO|LP|LTD|PROPERTIES|HOLDINGS|"
                      r"ENTERP|BANK|ASSOC|PARTNERS|GROUP)\b", re.I)
 
 
-def _skiptrace_probe(deals: list[dict]) -> None:
-    """Honest, bounded attempt to get a phone free. Individuals only (LLCs need
-    SunBiz, not people-search). These sites bot-wall datacenter IPs, so this
-    mostly tells us definitively whether free auto skip-trace is even possible."""
-    print("  ---- SKIP-TRACE PROBE (free) ----")
-    tried = 0
+SKIPTRACE_MAX = 15   # cap ZenRows lookups per run (credits/time bound)
+
+
+def _enrich_phones(deals: list[dict]) -> int:
+    """Attach a phone to each individual-owned deal via ZenRows skip-trace
+    (residential proxy — gets past the people-search bot-wall). Sets m['phone'].
+    LLC-owned rows are left for SunBiz. No-op if ZENROWS_API_KEY isn't set."""
+    from src.pipeline.skiptrace import skiptrace_person, enabled
+    if not enabled():
+        print("  [SKIPTRACE] ZENROWS_API_KEY not set — add it as a secret to enable phones")
+        return 0
+    print("  ---- SKIP-TRACE via ZenRows ----")
+    found, used = 0, 0
     for m in deals:
+        if used >= SKIPTRACE_MAX:
+            break
         name = (m.get("owner_name") or "").strip()
         if _ENTITY.search(name):
-            print(f"  [SKIPTRACE] {name}: entity-owned -> needs SunBiz, skipping people-search")
+            m["phone"] = "(LLC — see SunBiz)"
             continue
         parts = [p for p in re.sub(r"[^A-Za-z ]", "", name).split() if len(p) > 1]
         if len(parts) < 2:
             continue
         first, last = parts[0], parts[-1]
-        city = (m.get("city") or "").replace(" ", "-")
-        url = f"https://www.fastpeoplesearch.com/name/{first}-{last}_{city}-FL".lower()
-        tried += 1
-        try:
-            r = httpx.get(url, timeout=15, follow_redirects=True,
-                          headers={"User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                                  "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                                  "Chrome/126 Safari/537.36")})
-            phones = _PHONE_RE.findall(r.text) if r.status_code == 200 else []
-            if phones:
-                print(f"  [SKIPTRACE] {first} {last} ({city}): {r.status_code} -> {phones[:3]}")
-            else:
-                print(f"  [SKIPTRACE] {first} {last} ({city}): HTTP {r.status_code}, no phone "
-                      f"(len {len(r.text)}) — likely blocked/captcha")
-        except Exception as e:
-            print(f"  [SKIPTRACE] {first} {last}: error {type(e).__name__}: {e}")
-        if tried >= 4:
-            break
-    if not tried:
-        print("  [SKIPTRACE] top deals are all entity-owned — free people-search N/A")
+        used += 1
+        res = skiptrace_person(first, last, m.get("city") or "Miami")
+        phones = res.get("phones") or []
+        m["phone"] = "; ".join(phones)
+        if phones:
+            found += 1
+            print(f"  [SKIPTRACE] {first} {last}: {phones}")
+        else:
+            print(f"  [SKIPTRACE] {first} {last}: {res.get('note')}")
+    print(f"  [SKIPTRACE] phones found: {found}/{used} looked up")
+    return found
 
 
 def build_offers(states: Optional[list[str]] = None) -> dict:
@@ -411,9 +411,11 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
                                                 0 if m["_abs"] else 1, -m["_spread"]))
     hot = ranked[:50]
     if hot:
+        # ZenRows skip-trace: attach phones to the top individual-owned deals
+        _enrich_phones(hot)
         hpath = f"hot_deals_call_list_{date.today()}.csv"
-        hfields = ["rank", "motivation", "absentee", "owner_name", "mailing_address",
-                   "property_address", "city", "zip", "reason",
+        hfields = ["rank", "motivation", "absentee", "owner_name", "phone",
+                   "mailing_address", "property_address", "city", "zip", "reason",
                    "assessed_value", "est_offer_25pct_under", "est_gross_spread"]
         with open(hpath, "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=hfields, extrasaction="ignore")
@@ -423,6 +425,7 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
                 w.writerow({"rank": i, "motivation": m["motivation"],
                             "absentee": "YES" if m["_abs"] else "no",
                             "owner_name": m["owner_name"],
+                            "phone": m.get("phone", ""),
                             "mailing_address": m["mailing_address"],
                             "property_address": m["property_address"],
                             "city": m["city"], "zip": m["zip"], "reason": m["reason"],
@@ -435,11 +438,9 @@ def build_offers(states: Optional[list[str]] = None) -> dict:
         for i, m in enumerate(hot[:10], 1):
             val = f"${int(m['market_value']):,}" if m["market_value"] > 0 else "n/a"
             abs_tag = "ABSENTEE" if m["_abs"] else "owner-occ"
+            ph = m.get("phone") or "no phone"
             print(f"  {i}. {m['owner_name']} | {m['property_address']}, {m['city']} {m['zip']} "
-                  f"| {m['motivation']}/{abs_tag} {m['reason']} | assessed {val} "
-                  f"| mail-> {m['mailing_address']}")
-        # honest free skip-trace PROBE on the top individual owners
-        _skiptrace_probe(hot[:6])
+                  f"| {m['motivation']}/{abs_tag} | 📞 {ph} | mail-> {m['mailing_address']}")
 
     print("=" * 60)
     print(f"  OFFER PACKAGE — {date.today()}")

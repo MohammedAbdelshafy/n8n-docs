@@ -58,6 +58,7 @@ jobs:
           EMAIL_APP_PASSWORD:  ${{ secrets.EMAIL_APP_PASSWORD }}
           REPLY_TO_EMAIL:      ${{ secrets.REPLY_TO_EMAIL }}
           YOUR_TIMEZONE:       ${{ secrets.YOUR_TIMEZONE }}
+          ZENROWS_API_KEY:     ${{ secrets.ZENROWS_API_KEY }}
         run: python main.py "${{ github.event.inputs.mode || 'daily' }}"
 
       - name: Upload CSV sheets
