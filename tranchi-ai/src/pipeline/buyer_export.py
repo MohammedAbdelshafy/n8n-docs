@@ -74,6 +74,65 @@ def export_buyers(states: Optional[list[str]] = None, out_path: str = None) -> s
     return out_path
 
 
+def export_best_buyers(limit: int = 150, states: Optional[list[str]] = None,
+                       out_path: str = None) -> str:
+    """Top-N cash buyers / wholesalers whose email is actually DELIVERABLE
+    (syntax + junk/role filter + live DNS), ranked by contactability. This is the
+    'best buyers, emails that reached' list to hand a partner agency."""
+    from src.outreach.email_validate import is_deliverable
+
+    rows, offset = [], 0
+    while True:
+        page = _sb().table("cash_buyers").select("*").range(offset, offset + 999).execute().data or []
+        rows.extend(page)
+        if len(page) < 1000:
+            break
+        offset += 1000
+    total = len(rows)
+
+    if states:
+        ss = [s.upper() for s in states]
+        rows = [r for r in rows if (r.get("state") or "").upper() in ss]
+
+    seen, good = set(), []
+    for r in rows:
+        e = (r.get("email") or "").strip().lower()
+        if not e or e in seen:
+            continue
+        if not is_deliverable(e):
+            continue
+        seen.add(e)
+        good.append(r)
+
+    def _score(r):
+        return ((3 if r.get("phone") else 0) + (2 if r.get("facebook") else 0)
+                + (1 if r.get("company") else 0) + (1 if r.get("website") else 0)
+                + int(r.get("score") or 0))
+    good.sort(key=_score, reverse=True)
+    best = good[:limit]
+
+    print(f"[BEST-BUYERS] cash_buyers total: {total:,} | with deliverable email: "
+          f"{len(good):,} | exporting: {len(best)}")
+    if not best:
+        print("  No buyers with deliverable emails found — the buyer/scraper side")
+        print("  was never populated (Places needed a paid key, YellowPages rate-limited).")
+        return ""
+
+    out_path = out_path or f"best_buyers_{len(best)}_{date.today()}.csv"
+    with open(out_path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=EXPORT_FIELDS, extrasaction="ignore")
+        w.writeheader()
+        for r in best:
+            for k in ("preferred_states", "preferred_property_types"):
+                if isinstance(r.get(k), list):
+                    r[k] = ", ".join(map(str, r[k]))
+            w.writerow(r)
+    fb = sum(1 for r in best if r.get("facebook"))
+    print(f"  Exported {len(best)} best buyers (deliverable email, ranked) -> {out_path}")
+    print(f"  Facebook-verified: {fb} | all emails passed the deliverability gate")
+    return out_path
+
+
 def export_summary() -> dict:
     rows = _sb().table("cash_buyers").select("state,opt_in,facebook").eq("opt_in", True).execute().data or []
     by_state: dict[str, int] = {}

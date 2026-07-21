@@ -208,6 +208,13 @@ def main():
         export_buyers(states=states)
         return
 
+    if mode == "best-buyers":
+        from src.pipeline.buyer_export import export_best_buyers
+        states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
+        nums = [int(a) for a in sys.argv[2:] if a.isdigit()]
+        export_best_buyers(limit=nums[0] if nums else 150, states=states)
+        return
+
     if mode == "county":
         from src.scrapers.county_records_scraper import run_county_records_scraper
         states = [a for a in sys.argv[2:] if len(a) == 2 and a.isupper()] or None
